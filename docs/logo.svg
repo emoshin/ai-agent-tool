@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" fill="none" role="img" aria-label="AI Agent Tool Logo">
+  <defs>
+    <linearGradient id="bgGrad" x1="16" y1="12" x2="184" y2="188" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#11161d"/>
+      <stop offset="55%" stop-color="#1a222d"/>
+      <stop offset="100%" stop-color="#131922"/>
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="36" y1="40" x2="128" y2="152" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#10a37f"/>
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="166" y1="42" x2="78" y2="158" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#e07a5f"/>
+    </linearGradient>
+    <linearGradient id="bubbleGrad" x1="56" y1="52" x2="144" y2="148" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#263140"/>
+      <stop offset="100%" stop-color="#161c24"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="46%" r="48%">
+      <stop offset="0%" stop-color="#10a37f" stop-opacity="0.28"/>
+      <stop offset="60%" stop-color="#e07a5f" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#11161d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- App Icon Container -->
+  <rect x="8" y="8" width="184" height="184" rx="42" fill="url(#bgGrad)" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2"/>
+  <rect x="8" y="8" width="184" height="184" rx="42" fill="url(#glow)"/>
+
+  <!-- Dual-Provider Orbital Gateway Arcs (OpenAI Emerald + Anthropic Coral/Amber) -->
+  <path
+    d="M 100 32 A 68 68 0 0 0 42 134"
+    stroke="url(#emeraldGrad)"
+    stroke-width="6"
+    stroke-linecap="round"
+  />
+  <path
+    d="M 100 168 A 68 68 0 0 0 158 66"
+    stroke="url(#amberGrad)"
+    stroke-width="6"
+    stroke-linecap="round"
+  />
+
+  <!-- Provider Endpoint Nodes -->
+  <circle cx="100" cy="32" r="5.5" fill="#34d399"/>
+  <circle cx="42" cy="134" r="5.5" fill="#10a37f"/>
+  <circle cx="158" cy="66" r="5.5" fill="#fbbf24"/>
+  <circle cx="100" cy="168" r="5.5" fill="#e07a5f"/>
+
+  <!-- Central Unified Chat Bubble + Proxy Shield -->
+  <path
+    d="M 66 60 H 134 C 142.8 60 150 67.2 150 76 V 116 C 150 124.8 142.8 132 134 132 H 92 L 70 148 V 132 H 66 C 57.2 132 50 124.8 50 116 V 76 C 50 67.2 57.2 60 66 60 Z"
+    fill="url(#bubbleGrad)"
+    stroke="#ffffff"
+    stroke-opacity="0.18"
+    stroke-width="2"
+    stroke-linejoin="round"
+  />
+
+  <!-- AI Spark inside Chat Bubble -->
+  <path
+    d="M 100 72 C 102.4 85.4 109.6 92.6 123 95 C 109.6 97.4 102.4 104.6 100 118 C 97.6 104.6 90.4 97.4 77 95 C 90.4 92.6 97.6 85.4 100 72 Z"
+    fill="url(#emeraldGrad)"
+  />
+  <circle cx="127" cy="77" r="4" fill="#fbbf24"/>
+  <circle cx="74" cy="113" r="3.2" fill="#34d399" fill-opacity="0.85"/>
+</svg>

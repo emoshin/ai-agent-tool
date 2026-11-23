@@ -21,21 +21,25 @@ import uk.emoshin.taf.aiagent.domain.AgentProvider;
 import uk.emoshin.taf.aiagent.domain.ProviderToken;
 import uk.emoshin.taf.aiagent.domain.UserStatus;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.AdminUserDto;
+import uk.emoshin.taf.aiagent.dto.AdminDtos.ChatBackupDto;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.GlobalTokenStatsResponse;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.OpenAiCostsRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.OpenAiCostsResponse;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.ProviderTokenResponse;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.UpdateUserStatusRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.UpsertProviderTokenRequest;
+import uk.emoshin.taf.aiagent.dto.AdminDtos.WorkspaceChatsBackupDto;
 import uk.emoshin.taf.aiagent.dto.ChatDtos.ChatMessageInput;
 import uk.emoshin.taf.aiagent.dto.ChatDtos.ChatRequest;
 import uk.emoshin.taf.aiagent.dto.ChatDtos.ChatSessionResponse;
+import uk.emoshin.taf.aiagent.dto.ChatDtos.RenameChatRequest;
 import uk.emoshin.taf.aiagent.dto.UserDtos.AuthResponse;
 import uk.emoshin.taf.aiagent.dto.UserDtos.LoginRequest;
 import uk.emoshin.taf.aiagent.dto.UserDtos.ModelUsageDto;
 import uk.emoshin.taf.aiagent.dto.UserDtos.RegisterRequest;
 import uk.emoshin.taf.aiagent.dto.UserDtos.UpdateProfileRequest;
 import uk.emoshin.taf.aiagent.dto.UserDtos.UserProfileResponse;
+import uk.emoshin.taf.aiagent.repository.ChatSessionRepository;
 import uk.emoshin.taf.aiagent.repository.ProviderTokenRepository;
 
 import java.io.IOException;
@@ -70,6 +74,9 @@ class BackendIntegrationTest {
 
     @Autowired
     private ProviderTokenRepository providerTokenRepository;
+
+    @Autowired
+    private ChatSessionRepository chatSessionRepository;
 
     @BeforeAll
     static void startMockProviders() throws IOException {
@@ -424,6 +431,122 @@ class BackendIntegrationTest {
         );
         assertThat(aliceChats.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(aliceChats.getBody()).hasSize(2);
+
+        // 8c. Alice renames her Claude chat and deletes her OpenAI chat -> soft deleted in DB
+        ChatSessionResponse claudeChat = List.of(aliceChats.getBody()).stream()
+                .filter(c -> c.model().equals("claude-sonnet-4"))
+                .findFirst()
+                .orElseThrow();
+        ChatSessionResponse openAiChat = List.of(aliceChats.getBody()).stream()
+                .filter(c -> c.model().equals("gpt-4o"))
+                .findFirst()
+                .orElseThrow();
+
+        ResponseEntity<ChatSessionResponse> renamedRes = restTemplate.exchange(
+                "/api/chats/" + claudeChat.id(),
+                HttpMethod.PATCH,
+                new HttpEntity<>(new RenameChatRequest("Alice Renamed Claude Chat"), bearerHeaders(aliceJwt)),
+                ChatSessionResponse.class
+        );
+        assertThat(renamedRes.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(renamedRes.getBody().title()).isEqualTo("Alice Renamed Claude Chat");
+
+        ResponseEntity<Void> aliceDeleteRes = restTemplate.exchange(
+                "/api/chats/" + openAiChat.id(),
+                HttpMethod.DELETE,
+                new HttpEntity<>(bearerHeaders(aliceJwt)),
+                Void.class
+        );
+        assertThat(aliceDeleteRes.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        // Alice's chat list only shows active chats (1 remaining)
+        ResponseEntity<ChatSessionResponse[]> aliceActiveChats = restTemplate.exchange(
+                "/api/chats",
+                HttpMethod.GET,
+                new HttpEntity<>(bearerHeaders(aliceJwt)),
+                ChatSessionResponse[].class
+        );
+        assertThat(aliceActiveChats.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(aliceActiveChats.getBody()).hasSize(1);
+        assertThat(aliceActiveChats.getBody()[0].id()).isEqualTo(claudeChat.id());
+        assertThat(aliceActiveChats.getBody()[0].title()).isEqualTo("Alice Renamed Claude Chat");
+
+        // DB row still exists and is marked deleted = true with deletedAt timestamp
+        var deletedEntity = chatSessionRepository.findById(openAiChat.id()).orElseThrow();
+        assertThat(deletedEntity.isDeleted()).isTrue();
+        assertThat(deletedEntity.getDeletedAt()).isNotNull();
+
+        // Posting to a deleted chat is rejected with 410 GONE
+        ResponseEntity<String> deletedChatPostAttempt = restTemplate.exchange(
+                "/api/chat",
+                HttpMethod.POST,
+                new HttpEntity<>(
+                        new ChatRequest("chat-alice-1", "gpt-4o", false, List.of(new ChatMessageInput("user", "Still there?"))),
+                        bearerHeaders(aliceJwt)
+                ),
+                String.class
+        );
+        assertThat(deletedChatPostAttempt.getStatusCode()).isEqualTo(HttpStatus.GONE);
+
+        // Admin still sees BOTH chats for Alice, with deleted flag set on the deleted one
+        ResponseEntity<ChatSessionResponse[]> adminChatsAfterDelete = restTemplate.exchange(
+                "/api/admin/users/" + aliceAdminView.id() + "/chats",
+                HttpMethod.GET,
+                new HttpEntity<>(bearerHeaders(adminJwt)),
+                ChatSessionResponse[].class
+        );
+        assertThat(adminChatsAfterDelete.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(adminChatsAfterDelete.getBody()).hasSize(2);
+        ChatSessionResponse deletedInAdmin = List.of(adminChatsAfterDelete.getBody()).stream()
+                .filter(c -> c.id().equals(openAiChat.id()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(deletedInAdmin.deleted()).isTrue();
+        assertThat(deletedInAdmin.deletedAt()).isNotNull();
+
+        // Non-admin cannot access chat backup endpoints
+        ResponseEntity<String> forbiddenBackup = restTemplate.exchange(
+                "/api/admin/chats/" + openAiChat.id() + "/backup",
+                HttpMethod.GET,
+                new HttpEntity<>(bearerHeaders(aliceJwt)),
+                String.class
+        );
+        assertThat(forbiddenBackup.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+
+        // Admin can backup any existing chat (including deleted by user), per-user chats, and workspace chats
+        ResponseEntity<ChatBackupDto> singleBackup = restTemplate.exchange(
+                "/api/admin/chats/" + openAiChat.id() + "/backup",
+                HttpMethod.GET,
+                new HttpEntity<>(bearerHeaders(adminJwt)),
+                ChatBackupDto.class
+        );
+        assertThat(singleBackup.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(singleBackup.getHeaders().getContentDisposition().getFilename())
+                .isEqualTo("chat-backup-" + openAiChat.id() + ".json");
+        assertThat(singleBackup.getBody().chatId()).isEqualTo(openAiChat.id());
+        assertThat(singleBackup.getBody().deletedByUser()).isTrue();
+        assertThat(singleBackup.getBody().deletedAt()).isNotNull();
+        assertThat(singleBackup.getBody().messages()).hasSize(2);
+
+        ResponseEntity<WorkspaceChatsBackupDto> userBackup = restTemplate.exchange(
+                "/api/admin/users/" + aliceAdminView.id() + "/chats/backup",
+                HttpMethod.GET,
+                new HttpEntity<>(bearerHeaders(adminJwt)),
+                WorkspaceChatsBackupDto.class
+        );
+        assertThat(userBackup.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(userBackup.getBody().totalChats()).isEqualTo(2);
+        assertThat(userBackup.getBody().deletedChats()).isEqualTo(1);
+
+        ResponseEntity<WorkspaceChatsBackupDto> workspaceBackup = restTemplate.exchange(
+                "/api/admin/chats/backup",
+                HttpMethod.GET,
+                new HttpEntity<>(bearerHeaders(adminJwt)),
+                WorkspaceChatsBackupDto.class
+        );
+        assertThat(workspaceBackup.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(workspaceBackup.getBody().totalChats()).isEqualTo(2);
+        assertThat(workspaceBackup.getBody().deletedChats()).isEqualTo(1);
 
         // 9. Admin suspends Alice -> Alice cannot login or chat
         ResponseEntity<AdminUserDto> suspendRes = restTemplate.exchange(

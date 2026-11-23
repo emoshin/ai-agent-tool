@@ -238,4 +238,159 @@ describe('Admin Console', () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it('hides user-deleted chat from user list, marks it with a deleted icon in Admin Console, and backs it up', async () => {
+    const user = userEvent.setup();
+    const createObjectUrlSpy = vi.fn(() => 'blob:mock-backup-url');
+    const revokeObjectUrlSpy = vi.fn();
+    const anchorClickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {});
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: createObjectUrlSpy,
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revokeObjectUrlSpy,
+    });
+
+    try {
+      render(<App botAdapters={{ simulated: new SimulatedBotAdapter(0) }} />);
+
+      const chatNav = screen.getByRole('navigation', { name: 'Chat history' });
+      expect(within(chatNav).getByText('Getting started with AI Bot UI')).toBeInTheDocument();
+
+      // User deletes the chat from their sidebar
+      await user.click(screen.getByRole('button', { name: 'Delete Getting started with AI Bot UI' }));
+      expect(within(chatNav).queryByText('Getting started with AI Bot UI')).not.toBeInTheDocument();
+
+      // Admin opens Console and sees deleted badge on user row
+      await user.click(screen.getByRole('button', { name: 'Admin Console' }));
+      const currentUserRow = screen.getByTestId('admin-user-row-user-current');
+      expect(within(currentUserRow).getByTestId('user-deleted-chats-badge-user-current')).toHaveTextContent(
+        '1 deleted'
+      );
+
+      // Admin inspects user's chats and sees the deleted icon + badge
+      await user.click(screen.getByRole('button', { name: 'View chats for Alex Morgan' }));
+      const dialog = screen.getByRole('dialog');
+      expect(within(dialog).getByTestId('admin-chat-deleted-icon-chat-welcome')).toHaveAttribute(
+        'aria-label',
+        'Deleted by user'
+      );
+
+      // Select the deleted chat and trigger JSON backup
+      await user.click(within(dialog).getByRole('button', { name: /^Getting started with AI Bot UI/i }));
+      expect(within(dialog).getByTestId('selected-chat-deleted-badge-chat-welcome')).toHaveTextContent(
+        'Deleted by user'
+      );
+
+      await user.click(
+        within(dialog).getByRole('button', { name: 'Backup selected chat Getting started with AI Bot UI' })
+      );
+
+      const modalStatus = await within(dialog).findByTestId('modal-backup-status');
+      expect(modalStatus).toHaveTextContent(
+        'Backed up "Getting started with AI Bot UI" (2 messages, deleted by user) to chat-backup-chat-welcome.json.'
+      );
+      expect(createObjectUrlSpy).toHaveBeenCalledTimes(1);
+      expect(anchorClickSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      anchorClickSpy.mockRestore();
+      Object.defineProperty(URL, 'createObjectURL', {
+        configurable: true,
+        writable: true,
+        value: originalCreateObjectURL,
+      });
+      Object.defineProperty(URL, 'revokeObjectURL', {
+        configurable: true,
+        writable: true,
+        value: originalRevokeObjectURL,
+      });
+    }
+  });
+
+  it('calls backend workspace chat backup endpoint in api mode and shows backup summary', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          backupVersion: '1.0',
+          exportedAt: 1700000000000,
+          totalChats: 5,
+          deletedChats: 2,
+          chats: [],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const anchorClickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {});
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => 'blob:mock-workspace-backup'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    });
+
+    try {
+      render(
+        <AdminPage
+          users={INITIAL_MANAGED_USERS}
+          providerTokens={DEFAULT_PROVIDER_TOKENS}
+          botMode="api"
+          authToken="jwt-admin-token"
+          onBackToChat={() => {}}
+          onAddUser={() => {}}
+          onToggleSuspendUser={() => {}}
+          onDeleteUser={() => {}}
+          onDeleteUserChat={() => {}}
+          onSaveProviderToken={async () => 'ok'}
+          onDeleteProviderToken={async () => {}}
+        />
+      );
+
+      await user.click(screen.getByRole('button', { name: 'Backup all chats' }));
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/admin/chats/backup',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer jwt-admin-token',
+          }),
+        })
+      );
+
+      const status = await screen.findByTestId('admin-backup-status');
+      expect(status).toHaveTextContent(
+        'Backed up 5 chats (2 deleted by user) to workspace-chats-backup.json.'
+      );
+    } finally {
+      anchorClickSpy.mockRestore();
+      vi.unstubAllGlobals();
+      Object.defineProperty(URL, 'createObjectURL', {
+        configurable: true,
+        writable: true,
+        value: originalCreateObjectURL,
+      });
+      Object.defineProperty(URL, 'revokeObjectURL', {
+        configurable: true,
+        writable: true,
+        value: originalRevokeObjectURL,
+      });
+    }
+  });
 });

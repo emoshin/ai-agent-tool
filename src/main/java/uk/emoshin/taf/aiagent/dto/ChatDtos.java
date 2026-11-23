@@ -3,6 +3,7 @@ package uk.emoshin.taf.aiagent.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,6 +35,13 @@ public final class ChatDtos {
     ) {
     }
 
+    public record RenameChatRequest(
+            @NotBlank(message = "Title is required")
+            @Size(max = 200, message = "Title must be at most 200 characters")
+            String title
+    ) {
+    }
+
     public record ChatMessageResponse(
             UUID id,
             String role,
@@ -50,6 +58,8 @@ public final class ChatDtos {
             String provider,
             long createdAt,
             long updatedAt,
+            boolean deleted,
+            Long deletedAt,
             List<ChatMessageResponse> messages
     ) {
     }

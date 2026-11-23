@@ -1,11 +1,13 @@
 import type {
   AgentProvider,
+  ChatBackupPayload,
   CreateUserInput,
   ManagedUser,
   OpenAiOrgCostsResponse,
   ProviderTokenConfig,
   UserRole,
   UserStatus,
+  WorkspaceChatsBackupPayload,
 } from '../types/admin';
 import type { BackendUserProfile } from '../types/auth';
 import type { ChatSession } from '../types/chat';
@@ -26,6 +28,8 @@ interface BackendChatSession {
   provider: string;
   createdAt: number;
   updatedAt: number;
+  deleted?: boolean;
+  deletedAt?: number | null;
   messages: BackendChatMessage[];
 }
 
@@ -63,6 +67,8 @@ function mapChatSession(chat: BackendChatSession): ChatSession {
     model: chat.model,
     createdAt: chat.createdAt,
     updatedAt: chat.updatedAt,
+    deletedByUser: Boolean(chat.deleted),
+    deletedAt: chat.deletedAt ?? null,
     messages: chat.messages.map((m) => ({
       id: m.id,
       role: m.role,
@@ -101,6 +107,24 @@ export async function fetchUserChats(accessToken: string): Promise<ChatSession[]
   await ensureOk(response, 'Failed to load chats');
   const data = (await response.json()) as BackendChatSession[];
   return data.map(mapChatSession);
+}
+
+export async function renameBackendChat(
+  accessToken: string,
+  chatId: string,
+  title: string
+): Promise<ChatSession> {
+  const response = await fetch(`/api/chats/${encodeURIComponent(chatId)}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ title }),
+  });
+  await ensureOk(response, 'Failed to rename chat');
+  const data = (await response.json()) as BackendChatSession;
+  return mapChatSession(data);
 }
 
 export async function deleteBackendChat(accessToken: string, chatId: string): Promise<void> {
@@ -248,4 +272,36 @@ export async function fetchOpenAiOrgCosts(
   });
   await ensureOk(response, 'Failed to query OpenAI billing');
   return (await response.json()) as OpenAiOrgCostsResponse;
+}
+
+export async function backupAdminChat(
+  accessToken: string,
+  chatId: string
+): Promise<ChatBackupPayload> {
+  const response = await fetch(`/api/admin/chats/${encodeURIComponent(chatId)}/backup`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  await ensureOk(response, 'Failed to backup chat');
+  return (await response.json()) as ChatBackupPayload;
+}
+
+export async function backupAdminUserChats(
+  accessToken: string,
+  userId: string
+): Promise<WorkspaceChatsBackupPayload> {
+  const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/chats/backup`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  await ensureOk(response, 'Failed to backup user chats');
+  return (await response.json()) as WorkspaceChatsBackupPayload;
+}
+
+export async function backupAllAdminChats(
+  accessToken: string
+): Promise<WorkspaceChatsBackupPayload> {
+  const response = await fetch('/api/admin/chats/backup', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  await ensureOk(response, 'Failed to backup workspace chats');
+  return (await response.json()) as WorkspaceChatsBackupPayload;
 }

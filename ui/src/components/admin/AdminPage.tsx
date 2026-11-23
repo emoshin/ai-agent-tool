@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Cpu,
   DollarSign,
+  Download,
   ExternalLink,
   Info,
   KeyRound,
@@ -17,17 +18,30 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
-import { fetchOpenAiOrgCosts } from '../../services/backendApiService';
+import {
+  backupAdminChat,
+  backupAdminUserChats,
+  backupAllAdminChats,
+  fetchOpenAiOrgCosts,
+} from '../../services/backendApiService';
 import type {
   AgentProvider,
+  ChatBackupPayload,
   CreateUserInput,
   ManagedUser,
   OpenAiOrgCostsResponse,
   ProviderTokenConfig,
   ProviderTokenSubmission,
   UserStatus,
+  WorkspaceChatsBackupPayload,
 } from '../../types/admin';
-import type { BotAdapterMode } from '../../types/chat';
+import type { BotAdapterMode, ChatSession } from '../../types/chat';
+import {
+  buildChatBackupPayload,
+  buildUserChatsBackupPayload,
+  buildWorkspaceChatsBackupPayload,
+  downloadJsonBackup,
+} from '../../utils/chatBackup';
 import { estimateUserCostBreakdown, formatTokenCount, formatUsd } from '../../utils/tokens';
 import { AddUserModal } from './AddUserModal';
 import { ProviderTokensTab } from './ProviderTokensTab';
@@ -74,6 +88,8 @@ export function AdminPage({
   const [orgCostsLoading, setOrgCostsLoading] = useState(false);
   const [orgCostsError, setOrgCostsError] = useState<string | null>(null);
   const [orgCostsResult, setOrgCostsResult] = useState<OpenAiOrgCostsResponse | null>(null);
+  const [backupNotice, setBackupNotice] = useState<string | null>(null);
+  const [backupBusy, setBackupBusy] = useState(false);
 
   const stats = useMemo(() => {
     let activeCount = 0;
@@ -83,6 +99,7 @@ export function AdminPage({
     let totalTokens = 0;
     let totalLimit = 0;
     let totalChats = 0;
+    let deletedChats = 0;
     let totalMessages = 0;
     let totalEstimatedUsd = 0;
     let totalOpenAiUsd = 0;
@@ -99,6 +116,7 @@ export function AdminPage({
       totalLimit += u.tokenUsage.tokenLimit;
       totalChats += u.chats.length;
       for (const c of u.chats) {
+        if (c.deletedByUser) deletedChats += 1;
         totalMessages += c.messages.length;
       }
 
@@ -121,6 +139,7 @@ export function AdminPage({
       totalLimit,
       quotaPercent,
       totalChats,
+      deletedChats,
       totalMessages,
       totalEstimatedUsd,
       totalOpenAiUsd,
@@ -128,6 +147,67 @@ export function AdminPage({
       userCostsMap,
     };
   }, [users]);
+
+  const handleBackupSingleChat = async (user: ManagedUser, chat: ChatSession): Promise<string> => {
+    setBackupBusy(true);
+    try {
+      const payload: ChatBackupPayload =
+        botMode === 'api' && authToken
+          ? await backupAdminChat(authToken, chat.id)
+          : buildChatBackupPayload(user, chat);
+      const filename = `chat-backup-${chat.id}.json`;
+      downloadJsonBackup(filename, payload);
+      const notice = `Backed up "${chat.title}" (${payload.messageCount} messages${payload.deletedByUser ? ', deleted by user' : ''}) to ${filename}.`;
+      setBackupNotice(notice);
+      return notice;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to create chat backup.';
+      setBackupNotice(msg);
+      throw err;
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const handleBackupUserChats = async (user: ManagedUser): Promise<string> => {
+    setBackupBusy(true);
+    try {
+      const payload: WorkspaceChatsBackupPayload =
+        botMode === 'api' && authToken
+          ? await backupAdminUserChats(authToken, user.id)
+          : buildUserChatsBackupPayload(user);
+      const filename = `user-chats-backup-${user.id}.json`;
+      downloadJsonBackup(filename, payload);
+      const notice = `Backed up ${payload.totalChats} chats (${payload.deletedChats} deleted by user) for ${user.name} to ${filename}.`;
+      setBackupNotice(notice);
+      return notice;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to create user chats backup.';
+      setBackupNotice(msg);
+      throw err;
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const handleBackupAllWorkspaceChats = async () => {
+    setBackupBusy(true);
+    try {
+      const payload: WorkspaceChatsBackupPayload =
+        botMode === 'api' && authToken
+          ? await backupAllAdminChats(authToken)
+          : buildWorkspaceChatsBackupPayload(users);
+      const filename = 'workspace-chats-backup.json';
+      downloadJsonBackup(filename, payload);
+      setBackupNotice(
+        `Backed up ${payload.totalChats} chats (${payload.deletedChats} deleted by user) to ${filename}.`
+      );
+    } catch (err) {
+      setBackupNotice(err instanceof Error ? err.message : 'Failed to create workspace backup.');
+    } finally {
+      setBackupBusy(false);
+    }
+  };
 
   const handleCheckOpenAiSpend = async () => {
     setOrgCostsError(null);
@@ -310,7 +390,8 @@ export function AdminPage({
               </div>
               <div className="mt-2 text-2xl font-semibold text-white">{stats.totalChats}</div>
               <div className="mt-1 text-xs text-[#b4b4b4]">
-                {stats.totalMessages} total messages logged
+                {stats.totalMessages} messages
+                {stats.deletedChats > 0 ? ` · ${stats.deletedChats} deleted` : ' logged'}
               </div>
             </div>
 
@@ -442,7 +523,7 @@ export function AdminPage({
             </div>
           </section>
 
-          {/* Filter & Search Toolbar */}
+          {/* Filter, Search & Backup Toolbar */}
           <section className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div className="relative max-w-sm flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#8e8ea0]" />
@@ -456,24 +537,54 @@ export function AdminPage({
               />
             </div>
 
-            <div className="inline-flex rounded-xl border border-white/10 bg-[#1b1b1b] p-1">
-              {(['all', 'active', 'suspended'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setStatusFilter(tab)}
-                  className={[
-                    'rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors',
-                    statusFilter === tab
-                      ? 'bg-[#2f2f2f] text-white'
-                      : 'text-[#8e8ea0] hover:text-white',
-                  ].join(' ')}
-                >
-                  {tab}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void handleBackupAllWorkspaceChats()}
+                disabled={backupBusy || stats.totalChats === 0}
+                aria-label="Backup all chats"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#1b1b1b] px-3 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:bg-[#2a2a2a] disabled:opacity-50"
+              >
+                <Download className="h-3.5 w-3.5 text-[#10a37f]" />
+                <span>Backup All Chats</span>
+              </button>
+
+              <div className="inline-flex rounded-xl border border-white/10 bg-[#1b1b1b] p-1">
+                {(['all', 'active', 'suspended'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setStatusFilter(tab)}
+                    className={[
+                      'rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors',
+                      statusFilter === tab
+                        ? 'bg-[#2f2f2f] text-white'
+                        : 'text-[#8e8ea0] hover:text-white',
+                    ].join(' ')}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
             </div>
           </section>
+
+          {backupNotice && (
+            <div
+              data-testid="admin-backup-status"
+              className="flex items-center justify-between rounded-xl border border-[#10a37f]/30 bg-[#10a37f]/10 px-4 py-2.5 text-xs text-emerald-100"
+            >
+              <span>{backupNotice}</span>
+              <button
+                type="button"
+                onClick={() => setBackupNotice(null)}
+                className="ml-3 text-[#8e8ea0] hover:text-white"
+                aria-label="Dismiss backup notice"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
 
           {/* Users Table */}
           <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#1b1b1b]">
@@ -506,6 +617,7 @@ export function AdminPage({
                             )
                           : 0;
                       const userCost = stats.userCostsMap[user.id] ?? estimateUserCostBreakdown(user);
+                      const userDeletedChatsCount = user.chats.filter((c) => c.deletedByUser).length;
                       const isConfirmingDelete = pendingDeleteUserId === user.id;
 
                       return (
@@ -605,17 +717,43 @@ export function AdminPage({
                           </td>
 
                           <td className="px-4 py-3.5">
-                            <button
-                              type="button"
-                              onClick={() => setInspectingUserId(user.id)}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#252525] px-2.5 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:border-white/20 hover:bg-[#2f2f2f]"
-                              aria-label={`View chats for ${user.name}`}
-                            >
-                              <MessageSquare className="h-3.5 w-3.5 text-[#10a37f]" />
-                              <span>
-                                {user.chats.length} {user.chats.length === 1 ? 'chat' : 'chats'}
-                              </span>
-                            </button>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setInspectingUserId(user.id)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#252525] px-2.5 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:border-white/20 hover:bg-[#2f2f2f]"
+                                aria-label={`View chats for ${user.name}`}
+                              >
+                                <MessageSquare className="h-3.5 w-3.5 text-[#10a37f]" />
+                                <span>
+                                  {user.chats.length} {user.chats.length === 1 ? 'chat' : 'chats'}
+                                </span>
+                              </button>
+
+                              {userDeletedChatsCount > 0 && (
+                                <span
+                                  data-testid={`user-deleted-chats-badge-${user.id}`}
+                                  title={`${userDeletedChatsCount} chat(s) deleted by user (retained for admin review & backup)`}
+                                  className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-[11px] font-medium text-rose-300"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                  <span>{userDeletedChatsCount} deleted</span>
+                                </span>
+                              )}
+
+                              {user.chats.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleBackupUserChats(user)}
+                                  disabled={backupBusy}
+                                  title={`Backup all chats for ${user.name}`}
+                                  aria-label={`Backup chats for ${user.name}`}
+                                  className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-[#252525] p-1.5 text-[#b4b4b4] transition-colors hover:border-white/20 hover:bg-[#2f2f2f] hover:text-white disabled:opacity-50"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </td>
 
                           <td className="px-4 py-3.5 text-right">
@@ -706,6 +844,8 @@ export function AdminPage({
         user={inspectingUser}
         onClose={() => setInspectingUserId(null)}
         onDeleteUserChat={onDeleteUserChat}
+        onBackupChat={handleBackupSingleChat}
+        onBackupUserChats={handleBackupUserChats}
       />
     </div>
   );

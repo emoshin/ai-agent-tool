@@ -11,7 +11,16 @@ import java.util.UUID;
 public interface ChatSessionRepository extends JpaRepository<ChatSessionEntity, UUID> {
 
     @EntityGraph(attributePaths = "messages")
+    List<ChatSessionEntity> findByUserIdAndDeletedFalseOrderByUpdatedAtDesc(UUID userId);
+
+    @EntityGraph(attributePaths = {"messages", "user"})
     List<ChatSessionEntity> findByUserIdOrderByUpdatedAtDesc(UUID userId);
+
+    @EntityGraph(attributePaths = {"messages", "user"})
+    List<ChatSessionEntity> findAllByOrderByUpdatedAtDesc();
+
+    @EntityGraph(attributePaths = {"messages", "user"})
+    Optional<ChatSessionEntity> findWithDetailsById(UUID id);
 
     @EntityGraph(attributePaths = "messages")
     Optional<ChatSessionEntity> findByIdAndUserId(UUID id, UUID userId);

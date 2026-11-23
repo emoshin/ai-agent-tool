@@ -17,6 +17,8 @@ export interface ChatSession {
   model: string;
   createdAt: number;
   updatedAt: number;
+  deletedByUser?: boolean;
+  deletedAt?: number | null;
 }
 
 export interface UserProfile {

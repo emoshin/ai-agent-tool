@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uk.emoshin.taf.aiagent.dto.ChatDtos.ChatRequest;
 import uk.emoshin.taf.aiagent.dto.ChatDtos.ChatSessionResponse;
+import uk.emoshin.taf.aiagent.dto.ChatDtos.RenameChatRequest;
 import uk.emoshin.taf.aiagent.proxy.ChatProxyService;
 import uk.emoshin.taf.aiagent.security.UserPrincipal;
 
@@ -50,6 +52,15 @@ public class ChatController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         return ResponseEntity.ok(chatProxyService.listUserChats(principal.getId()));
+    }
+
+    @PatchMapping("/chats/{chatId}")
+    public ResponseEntity<ChatSessionResponse> renameChat(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID chatId,
+            @Valid @RequestBody RenameChatRequest request
+    ) {
+        return ResponseEntity.ok(chatProxyService.renameUserChat(principal.getId(), chatId, request.title()));
     }
 
     @DeleteMapping("/chats/{chatId}")

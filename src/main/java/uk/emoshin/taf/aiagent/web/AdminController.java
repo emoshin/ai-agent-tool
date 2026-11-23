@@ -1,7 +1,10 @@
 package uk.emoshin.taf.aiagent.web;
 
 import jakarta.validation.Valid;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,12 +18,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.AdminCreateUserRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.AdminUserDto;
+import uk.emoshin.taf.aiagent.dto.AdminDtos.ChatBackupDto;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.GlobalTokenStatsResponse;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.OpenAiCostsRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.OpenAiCostsResponse;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.ProviderTokenResponse;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.UpdateUserStatusRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.UpsertProviderTokenRequest;
+import uk.emoshin.taf.aiagent.dto.AdminDtos.WorkspaceChatsBackupDto;
 import uk.emoshin.taf.aiagent.dto.ChatDtos.ChatSessionResponse;
 import uk.emoshin.taf.aiagent.security.UserPrincipal;
 import uk.emoshin.taf.aiagent.service.AdminService;
@@ -91,6 +96,21 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/chats/{chatId}/backup")
+    public ResponseEntity<ChatBackupDto> backupChat(@PathVariable UUID chatId) {
+        return jsonDownloadResponse(adminService.backupChat(chatId), "chat-backup-" + chatId + ".json");
+    }
+
+    @GetMapping("/users/{userId}/chats/backup")
+    public ResponseEntity<WorkspaceChatsBackupDto> backupUserChats(@PathVariable UUID userId) {
+        return jsonDownloadResponse(adminService.backupUserChats(userId), "user-chats-backup-" + userId + ".json");
+    }
+
+    @GetMapping("/chats/backup")
+    public ResponseEntity<WorkspaceChatsBackupDto> backupAllChats() {
+        return jsonDownloadResponse(adminService.backupAllChats(), "workspace-chats-backup.json");
+    }
+
     @GetMapping("/provider-tokens")
     public ResponseEntity<List<ProviderTokenResponse>> listProviderTokens() {
         return ResponseEntity.ok(providerTokenService.listMaskedTokens());
@@ -120,5 +140,12 @@ public class AdminController {
             @RequestBody(required = false) OpenAiCostsRequest request
     ) {
         return ResponseEntity.ok(openAiBillingService.fetchOrganizationCosts(request));
+    }
+
+    private static <T> ResponseEntity<T> jsonDownloadResponse(T body, String filename) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentDisposition(ContentDisposition.attachment().filename(filename).build());
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 }

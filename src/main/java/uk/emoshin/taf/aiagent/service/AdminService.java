@@ -11,6 +11,8 @@ import uk.emoshin.taf.aiagent.domain.UserRole;
 import uk.emoshin.taf.aiagent.domain.UserStatus;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.AdminCreateUserRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.AdminUserDto;
+import uk.emoshin.taf.aiagent.dto.AdminDtos.ChatBackupDto;
+import uk.emoshin.taf.aiagent.dto.AdminDtos.WorkspaceChatsBackupDto;
 import uk.emoshin.taf.aiagent.dto.ChatDtos.ChatMessageResponse;
 import uk.emoshin.taf.aiagent.dto.ChatDtos.ChatSessionResponse;
 import uk.emoshin.taf.aiagent.repository.AppUserRepository;
@@ -29,17 +31,20 @@ public class AdminService {
     private final AppUserRepository appUserRepository;
     private final ChatSessionRepository chatSessionRepository;
     private final TokenStatsService tokenStatsService;
+    private final ModelPricingService modelPricingService;
     private final PasswordEncoder passwordEncoder;
 
     public AdminService(
             AppUserRepository appUserRepository,
             ChatSessionRepository chatSessionRepository,
             TokenStatsService tokenStatsService,
+            ModelPricingService modelPricingService,
             PasswordEncoder passwordEncoder
     ) {
         this.appUserRepository = appUserRepository;
         this.chatSessionRepository = chatSessionRepository;
         this.tokenStatsService = tokenStatsService;
+        this.modelPricingService = modelPricingService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -114,6 +119,73 @@ public class AdminService {
         chatSessionRepository.delete(chat);
     }
 
+    @Transactional(readOnly = true)
+    public ChatBackupDto backupChat(UUID chatId) {
+        ChatSessionEntity chat = chatSessionRepository.findWithDetailsById(chatId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Chat session not found"));
+        return toChatBackupDto(chat, Instant.now().toEpochMilli());
+    }
+
+    @Transactional(readOnly = true)
+    public WorkspaceChatsBackupDto backupUserChats(UUID userId) {
+        if (!appUserRepository.existsById(userId)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "User not found");
+        }
+        long exportedAt = Instant.now().toEpochMilli();
+        List<ChatBackupDto> chats = chatSessionRepository.findByUserIdOrderByUpdatedAtDesc(userId).stream()
+                .map(chat -> toChatBackupDto(chat, exportedAt))
+                .toList();
+        int deletedCount = (int) chats.stream().filter(ChatBackupDto::deletedByUser).count();
+        return new WorkspaceChatsBackupDto("1.0", exportedAt, chats.size(), deletedCount, chats);
+    }
+
+    @Transactional(readOnly = true)
+    public WorkspaceChatsBackupDto backupAllChats() {
+        long exportedAt = Instant.now().toEpochMilli();
+        List<ChatBackupDto> chats = chatSessionRepository.findAllByOrderByUpdatedAtDesc().stream()
+                .map(chat -> toChatBackupDto(chat, exportedAt))
+                .toList();
+        int deletedCount = (int) chats.stream().filter(ChatBackupDto::deletedByUser).count();
+        return new WorkspaceChatsBackupDto("1.0", exportedAt, chats.size(), deletedCount, chats);
+    }
+
+    private ChatBackupDto toChatBackupDto(ChatSessionEntity chat, long exportedAt) {
+        List<ChatMessageResponse> messages = chat.getMessages().stream()
+                .map(AdminService::toMessageResponse)
+                .toList();
+        long promptTokens = messages.stream()
+                .filter(m -> !"assistant".equalsIgnoreCase(m.role()))
+                .mapToLong(ChatMessageResponse::tokenCount)
+                .sum();
+        long completionTokens = messages.stream()
+                .filter(m -> "assistant".equalsIgnoreCase(m.role()))
+                .mapToLong(ChatMessageResponse::tokenCount)
+                .sum();
+        long totalTokens = promptTokens + completionTokens;
+        double estimatedCostUsd = modelPricingService.estimateCostUsd(chat.getModel(), promptTokens, completionTokens);
+
+        AppUser owner = chat.getUser();
+        return new ChatBackupDto(
+                "1.0",
+                exportedAt,
+                chat.getId(),
+                owner.getId(),
+                owner.getName(),
+                owner.getEmail(),
+                chat.getTitle(),
+                chat.getModel(),
+                chat.getProvider().toCode(),
+                chat.isDeleted(),
+                chat.getDeletedAt(),
+                chat.getCreatedAt(),
+                chat.getUpdatedAt(),
+                messages.size(),
+                totalTokens,
+                estimatedCostUsd,
+                messages
+        );
+    }
+
     private AdminUserDto toAdminUserDto(AppUser user) {
         return new AdminUserDto(
                 user.getId(),
@@ -142,6 +214,8 @@ public class AdminService {
                 chat.getProvider().toCode(),
                 chat.getCreatedAt(),
                 chat.getUpdatedAt(),
+                chat.isDeleted(),
+                chat.getDeletedAt(),
                 messages
         );
     }

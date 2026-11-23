@@ -145,17 +145,33 @@ public class ChatProxyService {
 
     public List<ChatSessionResponse> listUserChats(UUID userId) {
         return transactionTemplate.execute(status ->
-                chatSessionRepository.findByUserIdOrderByUpdatedAtDesc(userId).stream()
+                chatSessionRepository.findByUserIdAndDeletedFalseOrderByUpdatedAtDesc(userId).stream()
                         .map(AdminService::toChatSessionResponse)
                         .toList()
         );
     }
 
+    public ChatSessionResponse renameUserChat(UUID userId, UUID chatId, String newTitle) {
+        return transactionTemplate.execute(status -> {
+            ChatSessionEntity session = chatSessionRepository.findByIdAndUserId(chatId, userId)
+                    .filter(chat -> !chat.isDeleted())
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Chat session not found"));
+            session.setTitle(newTitle.trim());
+            session.setUpdatedAt(Instant.now().toEpochMilli());
+            return AdminService.toChatSessionResponse(chatSessionRepository.save(session));
+        });
+    }
+
     public void deleteUserChat(UUID userId, UUID chatId) {
         transactionTemplate.executeWithoutResult(status -> {
             ChatSessionEntity session = chatSessionRepository.findByIdAndUserId(chatId, userId)
+                    .filter(chat -> !chat.isDeleted())
                     .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Chat session not found"));
-            chatSessionRepository.delete(session);
+            long now = Instant.now().toEpochMilli();
+            session.setDeleted(true);
+            session.setDeletedAt(now);
+            session.setUpdatedAt(now);
+            chatSessionRepository.save(session);
         });
     }
 
@@ -268,6 +284,9 @@ public class ChatProxyService {
             if (existing != null) {
                 if (!existing.getUser().getId().equals(user.getId())) {
                     throw new ApiException(HttpStatus.FORBIDDEN, "Chat session belongs to another user");
+                }
+                if (existing.isDeleted()) {
+                    throw new ApiException(HttpStatus.GONE, "Chat session has been deleted");
                 }
                 if (!existing.getMessages().isEmpty() && !existing.getModel().equalsIgnoreCase(selectedModel)) {
                     throw new ApiException(

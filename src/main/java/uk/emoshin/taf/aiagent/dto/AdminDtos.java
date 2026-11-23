@@ -108,4 +108,34 @@ public final class AdminDtos {
             String message
     ) {
     }
+
+    public record ChatBackupDto(
+            String backupVersion,
+            long exportedAt,
+            UUID chatId,
+            UUID userId,
+            String userName,
+            String userEmail,
+            String title,
+            String model,
+            String provider,
+            boolean deletedByUser,
+            Long deletedAt,
+            long createdAt,
+            long updatedAt,
+            int messageCount,
+            long totalTokens,
+            double estimatedCostUsd,
+            List<ChatDtos.ChatMessageResponse> messages
+    ) {
+    }
+
+    public record WorkspaceChatsBackupDto(
+            String backupVersion,
+            long exportedAt,
+            int totalChats,
+            int deletedChats,
+            List<ChatBackupDto> chats
+    ) {
+    }
 }

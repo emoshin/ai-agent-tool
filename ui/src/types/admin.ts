@@ -1,5 +1,5 @@
 import type { BackendModelUsage } from './auth';
-import type { ChatSession } from './chat';
+import type { ChatMessage, ChatSession } from './chat';
 
 export type UserStatus = 'active' | 'suspended';
 export type UserRole = 'admin' | 'member' | 'viewer';
@@ -58,4 +58,32 @@ export interface OpenAiOrgCostsResponse {
   remainingBalanceSupported: boolean;
   source: string;
   message: string;
+}
+
+export interface ChatBackupPayload {
+  backupVersion: string;
+  exportedAt: number;
+  chatId: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  title: string;
+  model: string;
+  provider: string;
+  deletedByUser: boolean;
+  deletedAt: number | null;
+  createdAt: number;
+  updatedAt: number;
+  messageCount: number;
+  totalTokens: number;
+  estimatedCostUsd: number;
+  messages: Array<Pick<ChatMessage, 'id' | 'role' | 'content' | 'createdAt'> & { tokenCount: number }>;
+}
+
+export interface WorkspaceChatsBackupPayload {
+  backupVersion: string;
+  exportedAt: number;
+  totalChats: number;
+  deletedChats: number;
+  chats: ChatBackupPayload[];
 }

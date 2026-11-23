@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Cpu, DollarSign, MessageSquare, Search, Trash2, User as UserIcon, X } from 'lucide-react';
+import {
+  Cpu,
+  DollarSign,
+  Download,
+  MessageSquare,
+  Search,
+  Trash2,
+  User as UserIcon,
+  X,
+} from 'lucide-react';
 import type { ManagedUser } from '../../types/admin';
+import type { ChatSession } from '../../types/chat';
 import { getModelDisplayName } from '../../utils/defaults';
 import {
   computeChatTokenBreakdown,
@@ -17,15 +27,29 @@ interface UserChatsModalProps {
   user: ManagedUser | null;
   onClose: () => void;
   onDeleteUserChat?: (userId: string, chatId: string) => void;
+  onBackupChat?: (user: ManagedUser, chat: ChatSession) => Promise<string> | void;
+  onBackupUserChats?: (user: ManagedUser) => Promise<string> | void;
 }
 
-export function UserChatsModal({ user, onClose, onDeleteUserChat }: UserChatsModalProps) {
+export function UserChatsModal({
+  user,
+  onClose,
+  onDeleteUserChat,
+  onBackupChat,
+  onBackupUserChats,
+}: UserChatsModalProps) {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [backupStatus, setBackupStatus] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     setSelectedChatId(user?.chats[0]?.id ?? null);
     setSearch('');
+    setBackupStatus(null);
   }, [user?.id]);
 
   const filteredChats = useMemo(() => {
@@ -48,6 +72,7 @@ export function UserChatsModal({ user, onClose, onDeleteUserChat }: UserChatsMod
   if (!user) return null;
 
   const userSpend = estimateUserCostBreakdown(user);
+  const deletedChatsCount = user.chats.filter((c) => c.deletedByUser).length;
   const selectedChat = filteredChats.find((c) => c.id === selectedChatId) ?? null;
   const selectedBreakdown = selectedChat ? computeChatTokenBreakdown(selectedChat) : null;
   const selectedChatCostUsd =
@@ -59,6 +84,46 @@ export function UserChatsModal({ user, onClose, onDeleteUserChat }: UserChatsMod
         )
       : 0;
 
+  const handleBackupSingle = async (chat: ChatSession) => {
+    if (!onBackupChat) return;
+    setBackupBusy(true);
+    setBackupStatus(null);
+    try {
+      const result = await onBackupChat(user, chat);
+      setBackupStatus({
+        type: 'success',
+        message: result || `Backed up "${chat.title}" to JSON.`,
+      });
+    } catch (err) {
+      setBackupStatus({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to back up chat.',
+      });
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const handleBackupAllForUser = async () => {
+    if (!onBackupUserChats) return;
+    setBackupBusy(true);
+    setBackupStatus(null);
+    try {
+      const result = await onBackupUserChats(user);
+      setBackupStatus({
+        type: 'success',
+        message: result || `Backed up ${user.chats.length} chat(s) for ${user.name}.`,
+      });
+    } catch (err) {
+      setBackupStatus({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to back up user chats.',
+      });
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs"
@@ -68,7 +133,7 @@ export function UserChatsModal({ user, onClose, onDeleteUserChat }: UserChatsMod
     >
       <div className="flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1b1b1b] text-[#ececec] shadow-2xl">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-white/10 bg-[#171717] px-5 py-4">
+        <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-[#171717] px-5 py-4">
           <div className="flex min-w-0 items-center gap-3">
             <img
               src={user.avatarUrl}
@@ -92,22 +157,59 @@ export function UserChatsModal({ user, onClose, onDeleteUserChat }: UserChatsMod
                 </span>
               </div>
               <p className="truncate text-xs text-[#8e8ea0]">
-                {user.email} · {user.chats.length} conversations ·{' '}
+                {user.email} · {user.chats.length} conversations
+                {deletedChatsCount > 0 ? ` (${deletedChatsCount} deleted by user)` : ''} ·{' '}
                 {formatTokenCount(user.tokenUsage.totalTokens)} total tokens · Est.{' '}
                 {formatUsd(userSpend.totalUsd)}
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-[#8e8ea0] hover:bg-white/10 hover:text-white"
-            aria-label="Close chat inspector"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {onBackupUserChats && user.chats.length > 0 && (
+              <button
+                type="button"
+                onClick={() => void handleBackupAllForUser()}
+                disabled={backupBusy}
+                aria-label={`Backup all chats for ${user.name}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-[#242424] px-3 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:bg-[#2f2f2f] disabled:opacity-50"
+              >
+                <Download className="h-3.5 w-3.5 text-[#10a37f]" />
+                <span>Backup Chats</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-[#8e8ea0] hover:bg-white/10 hover:text-white"
+              aria-label="Close chat inspector"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
+
+        {backupStatus && (
+          <div
+            data-testid="modal-backup-status"
+            className={[
+              'flex items-center justify-between border-b px-5 py-2 text-xs',
+              backupStatus.type === 'success'
+                ? 'border-[#10a37f]/30 bg-[#10a37f]/10 text-emerald-100'
+                : 'border-red-500/30 bg-red-500/10 text-red-200',
+            ].join(' ')}
+          >
+            <span>{backupStatus.message}</span>
+            <button
+              type="button"
+              onClick={() => setBackupStatus(null)}
+              className="ml-3 text-[#8e8ea0] hover:text-white"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Split Pane Body */}
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
@@ -147,24 +249,53 @@ export function UserChatsModal({ user, onClose, onDeleteUserChat }: UserChatsMod
                             isSelected
                               ? 'bg-[#2f2f2f] text-white'
                               : 'text-[#d1d5db] hover:bg-[#242424]',
+                            chat.deletedByUser ? 'border border-rose-500/25' : '',
                           ].join(' ')}
                         >
                           <div className="flex items-center gap-2">
                             <ModelIcon modelId={chat.model} className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate text-sm font-medium">{chat.title}</span>
+                            <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                              {chat.title}
+                            </span>
+                            {chat.deletedByUser && (
+                              <span
+                                data-testid={`admin-chat-deleted-icon-${chat.id}`}
+                                title="Deleted by user"
+                                aria-label="Deleted by user"
+                                className="inline-flex shrink-0 items-center text-rose-400"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </span>
+                            )}
                           </div>
                           <div className="mt-1 flex items-center justify-between text-[11px] text-[#8e8ea0]">
-                            <span>{chat.messages.length} msgs</span>
+                            <span>
+                              {chat.messages.length} msgs
+                              {chat.deletedByUser ? ' · Deleted' : ''}
+                            </span>
                             <span>{formatTokenCount(tokens.totalTokens)} tok</span>
                           </div>
                         </button>
+
+                        {onBackupChat && (
+                          <button
+                            type="button"
+                            onClick={() => void handleBackupSingle(chat)}
+                            disabled={backupBusy}
+                            className="rounded-lg p-1.5 text-[#8e8ea0] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 hover:bg-white/10 hover:text-[#10a37f] disabled:opacity-40"
+                            title="Backup conversation JSON"
+                            aria-label={`Backup chat ${chat.title}`}
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </button>
+                        )}
 
                         {onDeleteUserChat && (
                           <button
                             type="button"
                             onClick={() => onDeleteUserChat(user.id, chat.id)}
-                            className="rounded-lg p-1.5 text-[#8e8ea0] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white/10 hover:text-red-400"
-                            title="Delete conversation"
+                            className="rounded-lg p-1.5 text-[#8e8ea0] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 hover:bg-white/10 hover:text-red-400"
+                            title="Permanently delete conversation"
                             aria-label={`Delete chat ${chat.title}`}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -183,29 +314,59 @@ export function UserChatsModal({ user, onClose, onDeleteUserChat }: UserChatsMod
             {selectedChat ? (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-5 py-3 text-xs text-[#b4b4b4]">
-                  <div className="flex items-center gap-2 font-medium text-white">
+                  <div className="flex flex-wrap items-center gap-2 font-medium text-white">
                     <ModelIcon modelId={selectedChat.model} className="h-4 w-4 shrink-0" />
                     <span>{selectedChat.title}</span>
                     <span className="rounded-md bg-white/10 px-2 py-0.5 text-[11px] text-[#d1d5db]">
                       {getModelDisplayName(selectedChat.model)}
                     </span>
+                    {selectedChat.deletedByUser && (
+                      <span
+                        data-testid={`selected-chat-deleted-badge-${selectedChat.id}`}
+                        className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-[11px] font-medium text-rose-300"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        <span>
+                          Deleted by user
+                          {selectedChat.deletedAt
+                            ? ` · ${new Date(selectedChat.deletedAt).toLocaleString()}`
+                            : ''}
+                        </span>
+                      </span>
+                    )}
                   </div>
-                  {selectedBreakdown && (
-                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#8e8ea0]">
-                      <span className="inline-flex items-center gap-1">
-                        <Cpu className="h-3.5 w-3.5 text-[#10a37f]" />
-                        Prompt: {selectedBreakdown.promptTokens.toLocaleString()}
-                      </span>
-                      <span>Completion: {selectedBreakdown.completionTokens.toLocaleString()}</span>
-                      <span className="font-medium text-[#ececec]">
-                        Total: {selectedBreakdown.totalTokens.toLocaleString()} tokens
-                      </span>
-                      <span className="inline-flex items-center gap-0.5 font-medium text-emerald-400">
-                        <DollarSign className="h-3 w-3" />
-                        Est. {formatUsd(selectedChatCostUsd)}
-                      </span>
-                    </div>
-                  )}
+
+                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#8e8ea0]">
+                    {selectedBreakdown && (
+                      <>
+                        <span className="inline-flex items-center gap-1">
+                          <Cpu className="h-3.5 w-3.5 text-[#10a37f]" />
+                          Prompt: {selectedBreakdown.promptTokens.toLocaleString()}
+                        </span>
+                        <span>Completion: {selectedBreakdown.completionTokens.toLocaleString()}</span>
+                        <span className="font-medium text-[#ececec]">
+                          Total: {selectedBreakdown.totalTokens.toLocaleString()} tokens
+                        </span>
+                        <span className="inline-flex items-center gap-0.5 font-medium text-emerald-400">
+                          <DollarSign className="h-3 w-3" />
+                          Est. {formatUsd(selectedChatCostUsd)}
+                        </span>
+                      </>
+                    )}
+
+                    {onBackupChat && (
+                      <button
+                        type="button"
+                        onClick={() => void handleBackupSingle(selectedChat)}
+                        disabled={backupBusy}
+                        aria-label={`Backup selected chat ${selectedChat.title}`}
+                        className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-[#171717] px-2.5 py-1 text-[11px] font-medium text-[#ececec] transition-colors hover:bg-[#2a2a2a] disabled:opacity-50"
+                      >
+                        <Download className="h-3 w-3 text-[#10a37f]" />
+                        <span>Backup Chat</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex-1 space-y-4 overflow-y-auto p-5">

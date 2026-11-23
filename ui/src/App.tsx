@@ -13,6 +13,7 @@ import {
   fetchAdminProviderTokens,
   fetchAdminUsers,
   fetchUserChats,
+  renameBackendChat,
   updateAdminUserStatus,
 } from './services/backendApiService';
 import { sendBotMessage, type BotAdapter } from './services/botClient';
@@ -204,20 +205,23 @@ export function App({ botAdapters }: AppProps = {}) {
     setShowAuthScreen(true);
   }, []);
 
-  // Keep current user's live chats and profile synced in the Admin directory (simulated mode)
+  // Keep current user's live chats and profile synced in the Admin directory (simulated mode),
+  // preserving chats soft-deleted by the user for Admin inspection & backup.
   useEffect(() => {
     if (botSettings.mode === 'api' && authSession) return;
     setManagedUsers((prev) =>
-      prev.map((u) =>
-        u.id === CURRENT_USER_ID
-          ? {
-              ...u,
-              name: userProfile.name,
-              avatarUrl: userProfile.avatarUrl,
-              chats,
-            }
-          : u
-      )
+      prev.map((u) => {
+        if (u.id !== CURRENT_USER_ID) return u;
+        const deletedChats = u.chats.filter(
+          (c) => c.deletedByUser && !chats.some((active) => active.id === c.id)
+        );
+        return {
+          ...u,
+          name: userProfile.name,
+          avatarUrl: userProfile.avatarUrl,
+          chats: [...chats, ...deletedChats],
+        };
+      })
     );
   }, [authSession, botSettings.mode, chats, userProfile.avatarUrl, userProfile.name]);
 
@@ -261,20 +265,68 @@ export function App({ botAdapters }: AppProps = {}) {
     [activeChatId, isStreaming, stopStreaming]
   );
 
-  const handleRenameChat = useCallback((chatId: string, newTitle: string) => {
-    setChats((prev) =>
-      prev.map((c) => (c.id === chatId ? { ...c, title: newTitle, updatedAt: Date.now() } : c))
-    );
-  }, []);
+  const handleRenameChat = useCallback(
+    (chatId: string, newTitle: string) => {
+      const now = Date.now();
+      if (botSettings.mode === 'api' && authSession?.accessToken) {
+        void renameBackendChat(authSession.accessToken, chatId, newTitle).catch(() => {});
+      }
+      setChats((prev) =>
+        prev.map((c) => (c.id === chatId ? { ...c, title: newTitle, updatedAt: now } : c))
+      );
+      setManagedUsers((prev) =>
+        prev.map((u) =>
+          u.id === currentUserId
+            ? {
+                ...u,
+                chats: u.chats.map((c) =>
+                  c.id === chatId ? { ...c, title: newTitle, updatedAt: now } : c
+                ),
+              }
+            : u
+        )
+      );
+    },
+    [authSession?.accessToken, botSettings.mode, currentUserId]
+  );
 
   const handleDeleteChat = useCallback(
     (chatId: string) => {
       if (streamingChatId === chatId) {
         stopStreaming();
       }
+      const deletedAt = Date.now();
+      const targetChat = chats.find((c) => c.id === chatId);
+
       if (botSettings.mode === 'api' && authSession?.accessToken) {
-        void deleteBackendChat(authSession.accessToken, chatId).catch(() => {});
+        void deleteBackendChat(authSession.accessToken, chatId)
+          .then(() => {
+            if (authSession.user.role === 'ADMIN') {
+              void syncBackendWorkspace(authSession);
+            }
+          })
+          .catch(() => {});
       }
+
+      if (targetChat) {
+        const archivedChat: ChatSession = {
+          ...targetChat,
+          deletedByUser: true,
+          deletedAt,
+          updatedAt: deletedAt,
+        };
+        setManagedUsers((prev) =>
+          prev.map((u) => {
+            if (u.id !== currentUserId) return u;
+            const remainingUserChats = u.chats.filter((c) => c.id !== chatId);
+            return {
+              ...u,
+              chats: [archivedChat, ...remainingUserChats],
+            };
+          })
+        );
+      }
+
       setChats((prev) => {
         const remaining = prev.filter((c) => c.id !== chatId);
         if (activeChatId === chatId) {
@@ -283,7 +335,16 @@ export function App({ botAdapters }: AppProps = {}) {
         return remaining;
       });
     },
-    [activeChatId, authSession?.accessToken, botSettings.mode, stopStreaming, streamingChatId]
+    [
+      activeChatId,
+      authSession,
+      botSettings.mode,
+      chats,
+      currentUserId,
+      stopStreaming,
+      streamingChatId,
+      syncBackendWorkspace,
+    ]
   );
 
   const handleSelectModel = useCallback(
@@ -630,8 +691,16 @@ export function App({ botAdapters }: AppProps = {}) {
       }
 
       if (userId === CURRENT_USER_ID) {
-        handleDeleteChat(chatId);
-        return;
+        if (streamingChatId === chatId) {
+          stopStreaming();
+        }
+        setChats((prev) => {
+          const remaining = prev.filter((c) => c.id !== chatId);
+          if (activeChatId === chatId) {
+            setActiveChatId(remaining[0]?.id ?? null);
+          }
+          return remaining;
+        });
       }
       setManagedUsers((prev) =>
         prev.map((u) =>
@@ -639,7 +708,7 @@ export function App({ botAdapters }: AppProps = {}) {
         )
       );
     },
-    [authSession, botSettings.mode, handleDeleteChat]
+    [activeChatId, authSession, botSettings.mode, stopStreaming, streamingChatId]
   );
 
   const handleSaveProviderToken = useCallback(
@@ -727,7 +796,12 @@ export function App({ botAdapters }: AppProps = {}) {
         onRenameChat={handleRenameChat}
         onDeleteChat={handleDeleteChat}
         onOpenSettings={() => setSettingsOpen(true)}
-        onOpenAdmin={() => setActiveView('admin')}
+        onOpenAdmin={() => {
+          setActiveView('admin');
+          if (botSettings.mode === 'api' && authSession?.accessToken) {
+            void syncBackendWorkspace(authSession);
+          }
+        }}
         onOpenAuth={() => {
           setAuthNotice(null);
           setShowAuthScreen(true);
@@ -756,7 +830,12 @@ export function App({ botAdapters }: AppProps = {}) {
         onStopStreaming={stopStreaming}
         onRegenerate={handleRegenerate}
         onOpenSettings={() => setSettingsOpen(true)}
-        onOpenAdmin={() => setActiveView('admin')}
+        onOpenAdmin={() => {
+          setActiveView('admin');
+          if (botSettings.mode === 'api' && authSession?.accessToken) {
+            void syncBackendWorkspace(authSession);
+          }
+        }}
         onOpenAuth={() => {
           setAuthNotice(null);
           setShowAuthScreen(true);

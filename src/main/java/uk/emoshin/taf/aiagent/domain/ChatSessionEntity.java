@@ -44,6 +44,12 @@ public class ChatSessionEntity {
     @Column(name = "updated_at", nullable = false)
     private long updatedAt;
 
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private Long deletedAt;
+
     @OneToMany(mappedBy = "chatSession", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("createdAt ASC")
     private List<ChatMessageEntity> messages = new ArrayList<>();
@@ -102,6 +108,22 @@ public class ChatSessionEntity {
 
     public void setUpdatedAt(long updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+
+    public Long getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(Long deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     public List<ChatMessageEntity> getMessages() {

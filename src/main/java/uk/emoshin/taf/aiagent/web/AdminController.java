@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,6 +24,7 @@ import uk.emoshin.taf.aiagent.dto.AdminDtos.GlobalTokenStatsResponse;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.OpenAiCostsRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.OpenAiCostsResponse;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.ProviderTokenResponse;
+import uk.emoshin.taf.aiagent.dto.AdminDtos.SetUserPasswordRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.UpdateUserStatusRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.UpsertProviderTokenRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.WorkspaceChatsBackupDto;
@@ -74,6 +76,15 @@ public class AdminController {
             @Valid @RequestBody UpdateUserStatusRequest request
     ) {
         return ResponseEntity.ok(adminService.updateUserStatus(id, request.status()));
+    }
+
+    @PutMapping("/users/{id}/password")
+    public ResponseEntity<Void> setUserPassword(
+            @PathVariable UUID id,
+            @Valid @RequestBody SetUserPasswordRequest request
+    ) {
+        adminService.setUserPassword(id, request.password());
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/users/{id}")

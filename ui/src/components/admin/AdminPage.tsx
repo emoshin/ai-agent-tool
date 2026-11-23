@@ -23,6 +23,7 @@ import {
   backupAdminUserChats,
   backupAllAdminChats,
   fetchOpenAiOrgCosts,
+  setAdminUserPassword,
 } from '../../services/backendApiService';
 import type {
   AgentProvider,
@@ -45,6 +46,7 @@ import {
 import { estimateUserCostBreakdown, formatTokenCount, formatUsd } from '../../utils/tokens';
 import { AddUserModal } from './AddUserModal';
 import { ProviderTokensTab } from './ProviderTokensTab';
+import { SetUserPasswordModal } from './SetUserPasswordModal';
 import { UserChatsModal } from './UserChatsModal';
 
 type AdminTab = 'users' | 'tokens';
@@ -58,6 +60,7 @@ interface AdminPageProps {
   onBackToChat: () => void;
   onAddUser: (input: CreateUserInput) => void;
   onToggleSuspendUser: (userId: string) => void;
+  onSetUserPassword?: (userId: string, password: string) => Promise<void> | void;
   onDeleteUser: (userId: string) => void;
   onDeleteUserChat: (userId: string, chatId: string) => void;
   onSaveProviderToken: (submission: ProviderTokenSubmission) => Promise<string>;
@@ -73,6 +76,7 @@ export function AdminPage({
   onBackToChat,
   onAddUser,
   onToggleSuspendUser,
+  onSetUserPassword,
   onDeleteUser,
   onDeleteUserChat,
   onSaveProviderToken,
@@ -83,12 +87,14 @@ export function AdminPage({
   const [statusFilter, setStatusFilter] = useState<'all' | UserStatus>('all');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [inspectingUserId, setInspectingUserId] = useState<string | null>(null);
+  const [passwordTargetUserId, setPasswordTargetUserId] = useState<string | null>(null);
   const [pendingDeleteUserId, setPendingDeleteUserId] = useState<string | null>(null);
   const [openAiAdminKey, setOpenAiAdminKey] = useState('');
   const [orgCostsLoading, setOrgCostsLoading] = useState(false);
   const [orgCostsError, setOrgCostsError] = useState<string | null>(null);
   const [orgCostsResult, setOrgCostsResult] = useState<OpenAiOrgCostsResponse | null>(null);
   const [backupNotice, setBackupNotice] = useState<string | null>(null);
+  const [passwordNotice, setPasswordNotice] = useState<string | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
 
   const stats = useMemo(() => {
@@ -237,6 +243,18 @@ export function AdminPage({
     }
   };
 
+  const handleSetUserPassword = async (userId: string, password: string) => {
+    const targetUser = users.find((u) => u.id === userId);
+    if (onSetUserPassword) {
+      await onSetUserPassword(userId, password);
+    } else if (botMode === 'api' && authToken) {
+      await setAdminUserPassword(authToken, userId, password);
+    }
+    setPasswordNotice(
+      `Password updated for ${targetUser ? `${targetUser.name} (${targetUser.email})` : 'user'}.`
+    );
+  };
+
   const filteredUsers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return users.filter((u) => {
@@ -251,6 +269,7 @@ export function AdminPage({
   }, [users, searchQuery, statusFilter]);
 
   const inspectingUser = users.find((u) => u.id === inspectingUserId) ?? null;
+  const passwordTargetUser = users.find((u) => u.id === passwordTargetUserId) ?? null;
 
   return (
     <div className="flex h-dvh w-screen flex-col overflow-hidden bg-[#212121] text-[#ececec]">
@@ -569,6 +588,23 @@ export function AdminPage({
             </div>
           </section>
 
+          {passwordNotice && (
+            <div
+              data-testid="admin-password-status"
+              className="flex items-center justify-between rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-2.5 text-xs text-sky-100"
+            >
+              <span>{passwordNotice}</span>
+              <button
+                type="button"
+                onClick={() => setPasswordNotice(null)}
+                className="ml-3 text-[#8e8ea0] hover:text-white"
+                aria-label="Dismiss password notice"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           {backupNotice && (
             <div
               data-testid="admin-backup-status"
@@ -782,6 +818,17 @@ export function AdminPage({
                               <div className="inline-flex items-center gap-1.5">
                                 <button
                                   type="button"
+                                  onClick={() => setPasswordTargetUserId(user.id)}
+                                  className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-[#252525] px-2.5 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:border-white/20 hover:bg-[#2f2f2f]"
+                                  aria-label={`Set password for ${user.name}`}
+                                  title={`Set password for ${user.name}`}
+                                >
+                                  <KeyRound className="h-3.5 w-3.5 text-sky-400" />
+                                  <span>Password</span>
+                                </button>
+
+                                <button
+                                  type="button"
                                   onClick={() => onToggleSuspendUser(user.id)}
                                   className={[
                                     'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors',
@@ -838,6 +885,12 @@ export function AdminPage({
         existingEmails={users.map((u) => u.email)}
         onClose={() => setAddModalOpen(false)}
         onAddUser={onAddUser}
+      />
+
+      <SetUserPasswordModal
+        user={passwordTargetUser}
+        onClose={() => setPasswordTargetUserId(null)}
+        onSetPassword={handleSetUserPassword}
       />
 
       <UserChatsModal

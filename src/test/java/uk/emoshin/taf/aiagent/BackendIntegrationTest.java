@@ -26,6 +26,7 @@ import uk.emoshin.taf.aiagent.dto.AdminDtos.GlobalTokenStatsResponse;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.OpenAiCostsRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.OpenAiCostsResponse;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.ProviderTokenResponse;
+import uk.emoshin.taf.aiagent.dto.AdminDtos.SetUserPasswordRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.UpdateUserStatusRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.UpsertProviderTokenRequest;
 import uk.emoshin.taf.aiagent.dto.AdminDtos.WorkspaceChatsBackupDto;
@@ -548,6 +549,46 @@ class BackendIntegrationTest {
         assertThat(workspaceBackup.getBody().totalChats()).isEqualTo(2);
         assertThat(workspaceBackup.getBody().deletedChats()).isEqualTo(1);
 
+        // 8d. Admin sets a new password for Alice's account (non-admin blocked, short password rejected)
+        ResponseEntity<String> forbiddenSetPassword = restTemplate.exchange(
+                "/api/admin/users/" + aliceAdminView.id() + "/password",
+                HttpMethod.PUT,
+                new HttpEntity<>(new SetUserPasswordRequest("hack1234"), bearerHeaders(aliceJwt)),
+                String.class
+        );
+        assertThat(forbiddenSetPassword.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+
+        ResponseEntity<String> invalidShortPassword = restTemplate.exchange(
+                "/api/admin/users/" + aliceAdminView.id() + "/password",
+                HttpMethod.PUT,
+                new HttpEntity<>(new SetUserPasswordRequest("123"), bearerHeaders(adminJwt)),
+                String.class
+        );
+        assertThat(invalidShortPassword.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+        ResponseEntity<Void> adminSetPasswordRes = restTemplate.exchange(
+                "/api/admin/users/" + aliceAdminView.id() + "/password",
+                HttpMethod.PUT,
+                new HttpEntity<>(new SetUserPasswordRequest("adminReset999"), bearerHeaders(adminJwt)),
+                Void.class
+        );
+        assertThat(adminSetPasswordRes.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        ResponseEntity<String> oldPasswordLogin = restTemplate.postForEntity(
+                "/api/users/login",
+                new LoginRequest("alice@example.com", "newpass456"),
+                String.class
+        );
+        assertThat(oldPasswordLogin.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+        ResponseEntity<AuthResponse> resetPasswordLogin = restTemplate.postForEntity(
+                "/api/users/login",
+                new LoginRequest("alice@example.com", "adminReset999"),
+                AuthResponse.class
+        );
+        assertThat(resetPasswordLogin.getStatusCode()).isEqualTo(HttpStatus.OK);
+        aliceJwt = resetPasswordLogin.getBody().accessToken();
+
         // 9. Admin suspends Alice -> Alice cannot login or chat
         ResponseEntity<AdminUserDto> suspendRes = restTemplate.exchange(
                 "/api/admin/users/" + aliceAdminView.id() + "/status",
@@ -571,7 +612,7 @@ class BackendIntegrationTest {
 
         ResponseEntity<String> suspendedLoginAttempt = restTemplate.postForEntity(
                 "/api/users/login",
-                new LoginRequest("alice@example.com", "newpass456"),
+                new LoginRequest("alice@example.com", "adminReset999"),
                 String.class
         );
         assertThat(suspendedLoginAttempt.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);

@@ -30,6 +30,7 @@ export interface ManagedUser {
 export interface CreateUserInput {
   name: string;
   email: string;
+  password?: string;
   role: UserRole;
   tokenLimit: number;
   avatarUrl: string;

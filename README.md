@@ -45,7 +45,7 @@
 ### Admin Console
 - **User Statistics Tab**:
   - Workspace KPI cards (total/active/suspended users, prompt/completion tokens, **estimated USD spend**, conversations including user-deleted count, quota utilization).
-  - Create users, suspend/activate accounts, delete users, and inspect or permanently delete user chat histories.
+  - Create users, set or reset passwords for any user account, suspend/activate accounts, delete users, and inspect or permanently delete user chat histories.
   - **Soft-Deleted Chat Visibility & Backups**: User-deleted chats are marked `deleted = true` in PostgreSQL (hidden from the user's chat list) and surfaced in the Admin Console with a deleted-chat icon badge; administrators can download JSON backups for any individual chat, all chats of a user, or the entire workspace.
 - **API Tokens Tab**:
   - Configure, rotate (with masked preview), or remove OpenAI and Anthropic API keys and custom base URLs.
@@ -161,7 +161,7 @@ Approximate USD spend is calculated from logged prompt and completion tokens usi
 | :--- | :--- | :--- |
 | **Auth & Profile** | `POST /api/users/register`, `POST /api/users/login`, `GET /api/users/me`, `PUT /api/users/me` | Public (`register`/`login`) / Authenticated |
 | **Chat & Proxy** | `GET /api/health`, `POST /api/chat` (SSE or JSON), `GET /api/chats`, `PATCH /api/chats/{chatId}`, `DELETE /api/chats/{chatId}` (soft-delete) | Authenticated (Active users) |
-| **Admin Users** | `GET /api/admin/users`, `POST /api/admin/users`, `PATCH /api/admin/users/{id}/status`, `DELETE /api/admin/users/{id}` | `ROLE_ADMIN` |
+| **Admin Users** | `GET /api/admin/users`, `POST /api/admin/users`, `PUT /api/admin/users/{id}/password`, `PATCH /api/admin/users/{id}/status`, `DELETE /api/admin/users/{id}` | `ROLE_ADMIN` |
 | **Admin Chats & Backups** | `GET /api/admin/users/{id}/chats`, `DELETE /api/admin/users/{userId}/chats/{chatId}`, `GET /api/admin/chats/backup`, `GET /api/admin/chats/{chatId}/backup`, `GET /api/admin/users/{userId}/chats/backup` | `ROLE_ADMIN` |
 | **Provider Vault** | `GET /api/admin/provider-tokens`, `POST /api/admin/provider-tokens`, `DELETE /api/admin/provider-tokens/{provider}` | `ROLE_ADMIN` |
 | **Stats & Billing** | `GET /api/admin/stats/tokens`, `POST /api/admin/billing/openai-costs` | `ROLE_ADMIN` |

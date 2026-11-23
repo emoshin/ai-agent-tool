@@ -95,6 +95,14 @@ public class AdminService {
     }
 
     @Transactional
+    public void setUserPassword(UUID userId, String rawPassword) {
+        AppUser user = appUserRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        appUserRepository.save(user);
+    }
+
+    @Transactional
     public void deleteUser(UUID userId) {
         if (!appUserRepository.existsById(userId)) {
             throw new ApiException(HttpStatus.NOT_FOUND, "User not found");

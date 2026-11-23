@@ -185,6 +185,7 @@ export async function createAdminUser(
     body: JSON.stringify({
       name: input.name,
       email: input.email,
+      ...(input.password ? { password: input.password } : {}),
       role: input.role.toUpperCase(),
       tokenLimit: input.tokenLimit,
       avatarUrl: input.avatarUrl,
@@ -212,6 +213,22 @@ export async function updateAdminUserStatus(
   await ensureOk(response, 'Failed to update user status');
   const updated = (await response.json()) as BackendAdminUser;
   return mapAdminUser(updated, currentUserId, []);
+}
+
+export async function setAdminUserPassword(
+  accessToken: string,
+  userId: string,
+  password: string
+): Promise<void> {
+  const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/password`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ password }),
+  });
+  await ensureOk(response, 'Failed to update user password');
 }
 
 export async function deleteAdminUser(accessToken: string, userId: string): Promise<void> {

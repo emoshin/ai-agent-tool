@@ -393,4 +393,90 @@ describe('Admin Console', () => {
       });
     }
   });
+
+  it('validates and sets a password for any user account from the Admin Console', async () => {
+    const user = userEvent.setup();
+    render(<App botAdapters={{ simulated: new SimulatedBotAdapter(0) }} />);
+
+    await user.click(screen.getByRole('button', { name: 'Admin Console' }));
+    await user.click(screen.getByRole('button', { name: 'Set password for Elena Rostova' }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('heading', { name: 'Set Password' })).toBeInTheDocument();
+    expect(within(dialog).getByText(/Elena Rostova/)).toBeInTheDocument();
+
+    // Validation: too short
+    await user.type(within(dialog).getByLabelText('New Password'), '123');
+    await user.type(within(dialog).getByLabelText('Confirm Password'), '123');
+    await user.click(within(dialog).getByRole('button', { name: 'Update password' }));
+    expect(within(dialog).getByTestId('set-password-error')).toHaveTextContent(
+      'Password must be at least 6 characters.'
+    );
+
+    // Validation: mismatch
+    await user.clear(within(dialog).getByLabelText('New Password'));
+    await user.clear(within(dialog).getByLabelText('Confirm Password'));
+    await user.type(within(dialog).getByLabelText('New Password'), 'secret123');
+    await user.type(within(dialog).getByLabelText('Confirm Password'), 'secret999');
+    await user.click(within(dialog).getByRole('button', { name: 'Update password' }));
+    expect(within(dialog).getByTestId('set-password-error')).toHaveTextContent(
+      'Passwords do not match.'
+    );
+
+    // Valid password update
+    await user.clear(within(dialog).getByLabelText('Confirm Password'));
+    await user.type(within(dialog).getByLabelText('Confirm Password'), 'secret123');
+    await user.click(within(dialog).getByRole('button', { name: 'Update password' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    const banner = await screen.findByTestId('admin-password-status');
+    expect(banner).toHaveTextContent('Password updated for Elena Rostova (elena.rostova@ai-agent-tool.dev).');
+  });
+
+  it('calls backend set-password endpoint in api mode for any user account', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      render(
+        <AdminPage
+          users={INITIAL_MANAGED_USERS}
+          providerTokens={DEFAULT_PROVIDER_TOKENS}
+          botMode="api"
+          authToken="jwt-admin-token"
+          onBackToChat={() => {}}
+          onAddUser={() => {}}
+          onToggleSuspendUser={() => {}}
+          onDeleteUser={() => {}}
+          onDeleteUserChat={() => {}}
+          onSaveProviderToken={async () => 'ok'}
+          onDeleteProviderToken={async () => {}}
+        />
+      );
+
+      await user.click(screen.getByRole('button', { name: 'Set password for Marcus Vance' }));
+      const dialog = screen.getByRole('dialog');
+      await user.type(within(dialog).getByLabelText('New Password'), 'marcusNewPass99');
+      await user.type(within(dialog).getByLabelText('Confirm Password'), 'marcusNewPass99');
+      await user.click(within(dialog).getByRole('button', { name: 'Update password' }));
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/admin/users/user-marcus/password',
+        expect.objectContaining({
+          method: 'PUT',
+          headers: expect.objectContaining({
+            Authorization: 'Bearer jwt-admin-token',
+            'Content-Type': 'application/json',
+          }),
+          body: JSON.stringify({ password: 'marcusNewPass99' }),
+        })
+      );
+
+      const banner = await screen.findByTestId('admin-password-status');
+      expect(banner).toHaveTextContent('Password updated for Marcus Vance (marcus.vance@ai-agent-tool.dev).');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

@@ -14,6 +14,7 @@ import {
   fetchAdminUsers,
   fetchUserChats,
   renameBackendChat,
+  setAdminUserPassword,
   updateAdminUserStatus,
 } from './services/backendApiService';
 import { sendBotMessage, type BotAdapter } from './services/botClient';
@@ -657,6 +658,15 @@ export function App({ botAdapters }: AppProps = {}) {
     [authSession, botSettings.mode, managedUsers]
   );
 
+  const handleSetUserPassword = useCallback(
+    async (userId: string, password: string): Promise<void> => {
+      if (botSettings.mode === 'api' && authSession?.accessToken) {
+        await setAdminUserPassword(authSession.accessToken, userId, password);
+      }
+    },
+    [authSession, botSettings.mode]
+  );
+
   const handleDeleteUser = useCallback(
     (userId: string) => {
       if (botSettings.mode === 'api' && authSession?.accessToken) {
@@ -770,6 +780,7 @@ export function App({ botAdapters }: AppProps = {}) {
         onBackToChat={() => setActiveView('chat')}
         onAddUser={handleAddUser}
         onToggleSuspendUser={handleToggleSuspendUser}
+        onSetUserPassword={handleSetUserPassword}
         onDeleteUser={handleDeleteUser}
         onDeleteUserChat={handleDeleteUserChat}
         onSaveProviderToken={handleSaveProviderToken}

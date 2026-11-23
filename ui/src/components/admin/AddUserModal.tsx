@@ -18,6 +18,7 @@ export function AddUserModal({
 }: AddUserModalProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('member');
   const [tokenLimit, setTokenLimit] = useState('250000');
   const [avatarUrl, setAvatarUrl] = useState(AVATAR_PRESETS[0]);
@@ -42,6 +43,10 @@ export function AddUserModal({
       setError('A user with this email already exists.');
       return;
     }
+    if (password && password.length < 6) {
+      setError('Initial password must be at least 6 characters.');
+      return;
+    }
 
     const parsedLimit = Number.parseInt(tokenLimit, 10);
     const validLimit = Number.isFinite(parsedLimit) && parsedLimit >= 1000 ? parsedLimit : 250000;
@@ -49,10 +54,14 @@ export function AddUserModal({
     onAddUser({
       name: trimmedName,
       email: trimmedEmail,
+      ...(password ? { password } : {}),
       role,
       tokenLimit: validLimit,
       avatarUrl: avatarUrl.trim() || AVATAR_PRESETS[0],
     });
+    setName('');
+    setEmail('');
+    setPassword('');
     onClose();
   };
 
@@ -120,6 +129,27 @@ export function AddUserModal({
                 setError(null);
               }}
               placeholder="jordan.lee@ai-agent-tool.dev"
+              className="w-full rounded-lg border border-white/10 bg-[#2a2a2a] px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+            />
+          </div>
+
+          <div>
+            <label
+              className="mb-1 block text-xs font-medium text-[#b4b4b4]"
+              htmlFor="new-user-password"
+            >
+              Initial Password (Optional)
+            </label>
+            <input
+              id="new-user-password"
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(null);
+              }}
+              placeholder="Leave blank to set later (min 6 chars)"
+              autoComplete="new-password"
               className="w-full rounded-lg border border-white/10 bg-[#2a2a2a] px-3 py-2 text-sm text-white outline-none focus:border-white/30"
             />
           </div>

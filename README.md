@@ -32,6 +32,7 @@
 - **Per-Chat Model Lock & Provider Icons**: Choose between OpenAI (`gpt-4o`, `o3-mini`) and Anthropic (`claude-sonnet-4`, `claude-opus-4`) when starting a new chat; the selected model is locked for that conversation and paired with a ChatGPT or Claude icon.
 - **Rich Streaming Responses**: Real-time Server-Sent Events (SSE) streaming with stop-generation, regenerate response, and GitHub-Flavored Markdown code rendering.
 - **Dual Adapter Mode**: Works out of the box in **Simulated Mode** for offline/UI testing, or connects to the Spring Boot **API Mode** backend.
+- **Bilingual Localization (EN / RU)**: Instant switching between **English** and **Russian** (`Русский`) across the Chat Workspace, Auth screen, Settings modal, and Admin Console, persisted in `localStorage`.
 
 ### Authentication & User Management
 - **Login & Registration (`AuthScreen`)**: JWT-secured sign-in and account registration, plus personal profile & password updates via `SettingsModal`.

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { UserPlus, X } from 'lucide-react';
+import { useI18n } from '../../i18n/I18nContext';
 import type { CreateUserInput, UserRole } from '../../types/admin';
 import { AVATAR_PRESETS } from '../../utils/defaults';
 
@@ -16,6 +17,7 @@ export function AddUserModal({
   onClose,
   onAddUser,
 }: AddUserModalProps) {
+  const { t } = useI18n();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,19 +34,19 @@ export function AddUserModal({
     const trimmedEmail = email.trim().toLowerCase();
 
     if (!trimmedName) {
-      setError('Full name is required.');
+      setError(t('addUser.errName'));
       return;
     }
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setError('Please enter a valid email address.');
+      setError(t('addUser.errEmail'));
       return;
     }
     if (existingEmails.some((em) => em.toLowerCase() === trimmedEmail)) {
-      setError('A user with this email already exists.');
+      setError(t('addUser.errDuplicate'));
       return;
     }
     if (password && password.length < 6) {
-      setError('Initial password must be at least 6 characters.');
+      setError(t('addUser.errPassword'));
       return;
     }
 
@@ -79,14 +81,14 @@ export function AddUserModal({
               <UserPlus className="h-5 w-5" />
             </div>
             <h2 id="add-user-modal-title" className="text-lg font-semibold text-white">
-              Add New User
+              {t('addUser.title')}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-1.5 text-[#8e8ea0] hover:bg-white/10 hover:text-white"
-            aria-label="Close add user modal"
+            aria-label={t('addUser.closeAria')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -101,7 +103,7 @@ export function AddUserModal({
 
           <div>
             <label className="mb-1 block text-xs font-medium text-[#b4b4b4]" htmlFor="new-user-name">
-              Full Name
+              {t('addUser.fullName')}
             </label>
             <input
               id="new-user-name"
@@ -118,7 +120,7 @@ export function AddUserModal({
 
           <div>
             <label className="mb-1 block text-xs font-medium text-[#b4b4b4]" htmlFor="new-user-email">
-              Email Address
+              {t('addUser.email')}
             </label>
             <input
               id="new-user-email"
@@ -138,7 +140,7 @@ export function AddUserModal({
               className="mb-1 block text-xs font-medium text-[#b4b4b4]"
               htmlFor="new-user-password"
             >
-              Initial Password (Optional)
+              {t('addUser.initialPassword')}
             </label>
             <input
               id="new-user-password"
@@ -148,7 +150,7 @@ export function AddUserModal({
                 setPassword(e.target.value);
                 setError(null);
               }}
-              placeholder="Leave blank to set later (min 6 chars)"
+              placeholder={t('addUser.initialPasswordPlaceholder')}
               autoComplete="new-password"
               className="w-full rounded-lg border border-white/10 bg-[#2a2a2a] px-3 py-2 text-sm text-white outline-none focus:border-white/30"
             />
@@ -157,7 +159,7 @@ export function AddUserModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-[#b4b4b4]" htmlFor="new-user-role">
-                Role
+                {t('addUser.role')}
               </label>
               <select
                 id="new-user-role"
@@ -165,15 +167,15 @@ export function AddUserModal({
                 onChange={(e) => setRole(e.target.value as UserRole)}
                 className="w-full rounded-lg border border-white/10 bg-[#2a2a2a] px-3 py-2 text-sm text-white outline-none focus:border-white/30"
               >
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-                <option value="viewer">Viewer</option>
+                <option value="member">{t('addUser.role.member')}</option>
+                <option value="admin">{t('addUser.role.admin')}</option>
+                <option value="viewer">{t('addUser.role.viewer')}</option>
               </select>
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-medium text-[#b4b4b4]" htmlFor="new-user-quota">
-                Monthly Token Quota
+                {t('addUser.quota')}
               </label>
               <input
                 id="new-user-quota"
@@ -189,7 +191,7 @@ export function AddUserModal({
 
           <div>
             <label className="mb-1.5 block text-xs font-medium text-[#b4b4b4]">
-              User Avatar
+              {t('addUser.avatar')}
             </label>
             <div className="mb-2 flex items-center gap-2">
               {AVATAR_PRESETS.map((preset, idx) => (
@@ -201,9 +203,9 @@ export function AddUserModal({
                     'rounded-full p-0.5 transition-transform hover:scale-105',
                     avatarUrl === preset ? 'ring-2 ring-[#10a37f]' : 'opacity-75',
                   ].join(' ')}
-                  aria-label={`Select user avatar ${idx + 1}`}
+                  aria-label={t('addUser.selectAvatarAria', { index: idx + 1 })}
                 >
-                  <img src={preset} alt={`Avatar preset ${idx + 1}`} className="h-8 w-8 rounded-full" />
+                  <img src={preset} alt={t('settings.presetAvatarAlt', { index: idx + 1 })} className="h-8 w-8 rounded-full" />
                 </button>
               ))}
             </div>
@@ -215,13 +217,13 @@ export function AddUserModal({
               onClick={onClose}
               className="rounded-xl px-4 py-2 text-sm text-[#b4b4b4] hover:bg-white/10 hover:text-white"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-[#212121] hover:bg-[#e5e5e5]"
             >
-              Create user
+              {t('addUser.submit')}
             </button>
           </div>
         </form>

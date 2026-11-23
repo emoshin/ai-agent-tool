@@ -11,9 +11,11 @@ import {
   Shield,
   SquarePen,
 } from 'lucide-react';
+import { useI18n, type TranslationKey } from '../i18n/I18nContext';
 import type { BotAdapterMode, ChatSession, ModelOption, UserProfile } from '../types/chat';
 import { getModelDisplayName, STARTER_PROMPTS } from '../utils/defaults';
 import { ChatInput } from './ChatInput';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { MessageBubble } from './MessageBubble';
 import { ModelIcon } from './ModelIcon';
 
@@ -66,6 +68,7 @@ export function ChatArea({
   onOpenAdmin,
   onOpenAuth,
 }: ChatAreaProps) {
+  const { t } = useI18n();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
@@ -123,6 +126,12 @@ export function ChatArea({
 
   const lastAssistantId = [...messages].reverse().find((m) => m.role === 'assistant')?.id;
 
+  const getModelDescription = (model: ModelOption): string => {
+    const key = `model.${model.id}.desc` as TranslationKey;
+    const localized = t(key);
+    return localized === key ? model.description : localized;
+  };
+
   return (
     <main className="relative flex min-w-0 flex-1 flex-col bg-[#212121]">
       {/* Top Header */}
@@ -133,8 +142,8 @@ export function ChatArea({
             type="button"
             onClick={onOpenMobileSidebar}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#b4b4b4] transition-colors hover:bg-[#2f2f2f] hover:text-white md:hidden"
-            title="Open sidebar"
-            aria-label="Open sidebar"
+            title={t('chat.openSidebar')}
+            aria-label={t('chat.openSidebar')}
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -146,8 +155,8 @@ export function ChatArea({
                 type="button"
                 onClick={onExpandSidebar}
                 className="hidden h-9 w-9 items-center justify-center rounded-lg text-[#b4b4b4] transition-colors hover:bg-[#2f2f2f] hover:text-white md:inline-flex"
-                title="Expand sidebar"
-                aria-label="Expand sidebar"
+                title={t('chat.expandSidebar')}
+                aria-label={t('chat.expandSidebar')}
               >
                 <PanelLeftOpen className="h-5 w-5" />
               </button>
@@ -155,8 +164,8 @@ export function ChatArea({
                 type="button"
                 onClick={onNewChat}
                 className="hidden h-9 w-9 items-center justify-center rounded-lg text-[#b4b4b4] transition-colors hover:bg-[#2f2f2f] hover:text-white md:inline-flex"
-                title="New chat"
-                aria-label="New chat from header"
+                title={t('sidebar.newChat')}
+                aria-label={t('chat.newChatHeaderAria')}
               >
                 <SquarePen className="h-5 w-5" />
               </button>
@@ -173,7 +182,7 @@ export function ChatArea({
                   className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-base font-semibold text-[#ececec] transition-colors hover:bg-[#2f2f2f]"
                   aria-haspopup="listbox"
                   aria-expanded={modelMenuOpen}
-                  aria-label="Select model for new chat"
+                  aria-label={t('chat.selectModelAria')}
                 >
                   <ModelIcon modelId={selectedModel} className="h-4 w-4 shrink-0" />
                   <span>{activeModelName}</span>
@@ -183,7 +192,7 @@ export function ChatArea({
                 {modelMenuOpen && (
                   <div
                     role="listbox"
-                    aria-label="Select AI model"
+                    aria-label={t('chat.selectAiModelAria')}
                     className="absolute left-0 z-30 mt-1.5 w-80 rounded-2xl border border-white/10 bg-[#2f2f2f] p-1.5 shadow-2xl"
                   >
                     {models.map((model) => {
@@ -206,7 +215,7 @@ export function ChatArea({
                           <ModelIcon provider={model.provider} className="mt-0.5 h-4 w-4 shrink-0" />
                           <div className="min-w-0 flex-1">
                             <div className="text-sm font-medium">{model.name}</div>
-                            <div className="text-xs text-[#8e8ea0]">{model.description}</div>
+                            <div className="text-xs text-[#8e8ea0]">{getModelDescription(model)}</div>
                           </div>
                         </button>
                       );
@@ -217,12 +226,12 @@ export function ChatArea({
             ) : (
               <div
                 data-testid="locked-model-badge"
-                title="Model is locked for this conversation. Start a new chat to switch models."
+                title={t('chat.modelLockedTooltip')}
                 className="inline-flex items-center gap-2 rounded-xl border border-white/5 bg-[#262626] px-3 py-1.5 text-sm font-semibold text-[#ececec]"
               >
                 <ModelIcon modelId={selectedModel} className="h-4 w-4 shrink-0" />
                 <span>{activeModelName}</span>
-                <Lock className="h-3.5 w-3.5 text-[#8e8ea0]" aria-label="Model locked" />
+                <Lock className="h-3.5 w-3.5 text-[#8e8ea0]" aria-label={t('chat.modelLockedAria')} />
               </div>
             )}
           </div>
@@ -230,15 +239,17 @@ export function ChatArea({
 
         {/* Right Header Controls */}
         <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+
           {!isAuthenticated && onOpenAuth && (
             <button
               type="button"
               onClick={onOpenAuth}
               className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-200 transition-colors hover:bg-sky-500/20 hover:text-white"
-              title="Sign in to Spring Boot backend"
+              title={t('chat.signInTitle')}
             >
               <LogIn className="h-3.5 w-3.5" />
-              <span>Sign In</span>
+              <span>{t('common.signIn')}</span>
             </button>
           )}
 
@@ -247,11 +258,11 @@ export function ChatArea({
               type="button"
               onClick={onOpenAdmin}
               className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#2a2a2a] px-3 py-1 text-xs font-medium text-[#d1d5db] transition-colors hover:border-white/20 hover:bg-[#333333] hover:text-white"
-              title="Open Admin Console"
-              aria-label="Admin Console"
+              title={t('sidebar.adminConsoleTitle')}
+              aria-label={t('chat.adminAria')}
             >
               <Shield className="h-3.5 w-3.5 text-[#10a37f]" />
-              <span>Admin</span>
+              <span>{t('chat.adminBadge')}</span>
             </button>
           )}
 
@@ -259,7 +270,7 @@ export function ChatArea({
             type="button"
             onClick={onOpenSettings}
             className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#2a2a2a] px-3 py-1 text-xs font-medium text-[#d1d5db] transition-colors hover:border-white/20 hover:bg-[#333333] hover:text-white"
-            title="Configure AI Bot Adapter"
+            title={t('chat.configureBotTitle')}
           >
             <span
               className={[
@@ -268,7 +279,7 @@ export function ChatArea({
               ].join(' ')}
             />
             <span className="hidden sm:inline">
-              {botMode === 'api' ? 'REST / SSE API' : 'Simulated Bot'}
+              {botMode === 'api' ? t('chat.modeApi') : t('chat.modeSimulated')}
             </span>
             <Settings className="h-3.5 w-3.5 text-[#8e8ea0]" />
           </button>
@@ -287,28 +298,35 @@ export function ChatArea({
               <ModelIcon modelId={selectedModel} className="h-6 w-6" />
             </div>
             <h1 className="mb-2 text-center text-2xl font-semibold text-white sm:text-3xl">
-              What can I help with?
+              {t('chat.emptyHeading')}
             </h1>
             <p className="mb-8 max-w-md text-center text-sm text-[#8e8ea0]">
-              Using <span className="font-medium text-[#ececec]">{activeModelName}</span> for this new
-              chat. Choose a model above before sending your first message.
+              {t('chat.emptySubheadingBefore')}
+              <span className="font-medium text-[#ececec]">{activeModelName}</span>
+              {t('chat.emptySubheadingAfter')}
             </p>
 
             <div className="grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
-              {STARTER_PROMPTS.map((item) => (
-                <button
-                  key={item.title}
-                  type="button"
-                  disabled={isUserSuspended}
-                  onClick={() => onSendMessage(item.prompt)}
-                  className="group rounded-2xl border border-white/10 bg-[#272727] p-4 text-left transition-colors hover:border-white/20 hover:bg-[#2f2f2f] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <div className="text-sm font-medium text-[#ececec] group-hover:text-white">
-                    {item.title}
-                  </div>
-                  <div className="mt-1 line-clamp-2 text-xs text-[#8e8ea0]">{item.prompt}</div>
-                </button>
-              ))}
+              {STARTER_PROMPTS.map((item, idx) => {
+                const titleKey = `starter.${idx + 1}.title` as TranslationKey;
+                const promptKey = `starter.${idx + 1}.prompt` as TranslationKey;
+                const localizedTitle = t(titleKey) === titleKey ? item.title : t(titleKey);
+                const localizedPrompt = t(promptKey) === promptKey ? item.prompt : t(promptKey);
+                return (
+                  <button
+                    key={item.title}
+                    type="button"
+                    disabled={isUserSuspended}
+                    onClick={() => onSendMessage(localizedPrompt)}
+                    className="group rounded-2xl border border-white/10 bg-[#272727] p-4 text-left transition-colors hover:border-white/20 hover:bg-[#2f2f2f] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <div className="text-sm font-medium text-[#ececec] group-hover:text-white">
+                      {localizedTitle}
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-xs text-[#8e8ea0]">{localizedPrompt}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         ) : (
@@ -336,8 +354,8 @@ export function ChatArea({
             type="button"
             onClick={scrollToBottom}
             className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-[#2f2f2f] text-[#ececec] shadow-lg transition-colors hover:bg-[#3a3a3a]"
-            aria-label="Scroll to bottom"
-            title="Scroll to bottom"
+            aria-label={t('chat.scrollToBottom')}
+            title={t('chat.scrollToBottom')}
           >
             <ArrowDown className="h-4 w-4" />
           </button>
@@ -348,10 +366,7 @@ export function ChatArea({
         <div className="mx-auto mb-1 flex w-full max-w-3xl items-center gap-2 px-4">
           <div className="flex w-full items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs text-amber-200">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
-            <span>
-              This account is currently suspended by an administrator. Reactivate it in the Admin
-              Console to resume sending messages.
-            </span>
+            <span>{t('chat.suspendedBanner')}</span>
           </div>
         </div>
       )}

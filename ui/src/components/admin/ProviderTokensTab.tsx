@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { CheckCircle2, Database, Eye, EyeOff, KeyRound, Trash2 } from 'lucide-react';
+import { useI18n } from '../../i18n/I18nContext';
 import type { AgentProvider, ProviderTokenConfig, ProviderTokenSubmission } from '../../types/admin';
 import type { BotAdapterMode } from '../../types/chat';
 import { maskApiKey } from '../../services/providerTokensService';
@@ -19,6 +20,7 @@ interface ProviderCardProps {
 }
 
 function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardProps) {
+  const { t, dateLocale } = useI18n();
   const isMasked = config.apiKey.includes('••••');
   const [apiKeyInput, setApiKeyInput] = useState(isMasked ? '' : config.apiKey);
   const [baseUrlInput, setBaseUrlInput] = useState(config.baseUrl);
@@ -41,7 +43,7 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
     e.preventDefault();
     const trimmedKey = apiKeyInput.trim();
     if (!trimmedKey) {
-      setFeedback({ type: 'error', text: 'API token cannot be empty.' });
+      setFeedback({ type: 'error', text: t('tokens.emptyErr') });
       return;
     }
 
@@ -57,7 +59,7 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
     } catch (err) {
       setFeedback({
         type: 'error',
-        text: err instanceof Error ? err.message : 'Failed to save API token.',
+        text: err instanceof Error ? err.message : t('tokens.saveErr'),
       });
     } finally {
       setSubmitting(false);
@@ -70,11 +72,11 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
     try {
       await onDeleteToken(config.provider);
       setApiKeyInput('');
-      setFeedback({ type: 'success', text: `${config.label} token removed.` });
+      setFeedback({ type: 'success', text: t('tokens.removedMsg', { label: config.label }) });
     } catch (err) {
       setFeedback({
         type: 'error',
-        text: err instanceof Error ? err.message : 'Failed to remove API token.',
+        text: err instanceof Error ? err.message : t('tokens.removeErr'),
       });
     } finally {
       setSubmitting(false);
@@ -101,9 +103,7 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
           <div>
             <h3 className="text-base font-semibold text-white">{config.label}</h3>
             <p className="text-xs text-[#8e8ea0]">
-              {isOpenAi
-                ? 'Used by ChatGPT 4o and o3-mini agent workflows'
-                : 'Used by Claude Sonnet 4 and Opus 4 agent workflows'}
+              {isOpenAi ? t('tokens.openaiDesc') : t('tokens.anthropicDesc')}
             </p>
           </div>
         </div>
@@ -122,7 +122,9 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
               isConfigured ? 'bg-[#10a37f]' : 'bg-[#8e8ea0]',
             ].join(' ')}
           />
-          {isConfigured ? `Configured (${displayMaskedKey})` : 'Not configured'}
+          {isConfigured
+            ? t('tokens.configured', { masked: displayMaskedKey })
+            : t('tokens.notConfigured')}
         </span>
       </div>
 
@@ -132,7 +134,7 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
             htmlFor={`token-input-${config.provider}`}
             className="mb-1.5 block text-xs font-medium text-[#b4b4b4]"
           >
-            {isOpenAi ? 'OpenAI / ChatGPT API Token' : 'Anthropic / Claude API Token'}
+            {isOpenAi ? t('tokens.openaiLabel') : t('tokens.anthropicLabel')}
           </label>
           <div className="relative flex items-center">
             <KeyRound className="pointer-events-none absolute left-3 h-4 w-4 text-[#8e8ea0]" />
@@ -146,7 +148,7 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
               }}
               placeholder={
                 isConfigured && isMasked
-                  ? 'Token stored in PostgreSQL — enter new key to replace'
+                  ? t('tokens.replacePlaceholder')
                   : isOpenAi
                     ? 'sk-proj-...'
                     : 'sk-ant-api03-...'
@@ -158,7 +160,11 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
               type="button"
               onClick={() => setShowKey((prev) => !prev)}
               className="absolute right-2.5 rounded-md p-1 text-[#8e8ea0] hover:bg-white/10 hover:text-white"
-              aria-label={showKey ? `Hide ${config.label} token` : `Show ${config.label} token`}
+              aria-label={
+                showKey
+                  ? t('tokens.hideAria', { label: config.label })
+                  : t('tokens.showAria', { label: config.label })
+              }
             >
               {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -170,7 +176,7 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
             htmlFor={`baseurl-input-${config.provider}`}
             className="mb-1.5 block text-xs font-medium text-[#b4b4b4]"
           >
-            Provider Base URL
+            {t('tokens.baseUrlLabel')}
           </label>
           <input
             id={`baseurl-input-${config.provider}`}
@@ -203,8 +209,8 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
           <span className="text-[11px] text-[#8e8ea0]">
             {config.updatedAt
-              ? `Last updated: ${new Date(config.updatedAt).toLocaleString()}`
-              : 'No token submitted yet'}
+              ? t('tokens.lastUpdated', { date: new Date(config.updatedAt).toLocaleString(dateLocale) })
+              : t('tokens.neverSubmitted')}
           </span>
 
           <div className="flex items-center gap-2">
@@ -214,10 +220,10 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
                 disabled={submitting}
                 onClick={handleClear}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#252525] px-3 py-2 text-xs font-medium text-[#b4b4b4] transition-colors hover:border-red-500/40 hover:bg-red-500/15 hover:text-red-300 disabled:opacity-50"
-                aria-label={`Remove ${config.label} token`}
+                aria-label={t('tokens.removeAria', { label: config.label })}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                <span>Remove</span>
+                <span>{t('common.remove')}</span>
               </button>
             )}
 
@@ -226,7 +232,13 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
               disabled={submitting}
               className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-semibold text-[#212121] transition-colors hover:bg-[#e5e5e5] disabled:opacity-50"
             >
-              <span>{submitting ? 'Saving...' : `Save ${isOpenAi ? 'ChatGPT' : 'Claude'} Token`}</span>
+              <span>
+                {submitting
+                  ? t('tokens.saving')
+                  : isOpenAi
+                    ? t('tokens.saveOpenAi')
+                    : t('tokens.saveAnthropic')}
+              </span>
             </button>
           </div>
         </div>
@@ -241,6 +253,8 @@ export function ProviderTokensTab({
   onSaveToken,
   onDeleteToken,
 }: ProviderTokensTabProps) {
+  const { t } = useI18n();
+
   return (
     <div className="space-y-6">
       {/* Backend / PostgreSQL Persistence Banner */}
@@ -250,14 +264,14 @@ export function ProviderTokensTab({
         </div>
         <div className="min-w-0 flex-1 text-xs leading-relaxed text-[#b4b4b4]">
           <div className="text-sm font-semibold text-white">
-            Agent Provider Credentials (PostgreSQL-Ready)
+            {t('tokens.bannerTitle')}
           </div>
           <p className="mt-1">
-            Submit API tokens for <strong>ChatGPT (OpenAI)</strong> and{' '}
-            <strong>Claude (Anthropic)</strong> agents below.{' '}
-            {botMode === 'api'
-              ? 'API mode is active: submissions are sent to POST /api/admin/provider-tokens for PostgreSQL storage.'
-              : 'Currently in Simulated Mode: tokens are stored locally in the browser and structured to sync to POST /api/admin/provider-tokens when the Java + PostgreSQL backend is connected.'}
+            {t('tokens.bannerPrefix')}
+            <strong>ChatGPT (OpenAI)</strong>
+            {t('tokens.bannerAnd')}
+            <strong>Claude (Anthropic)</strong>
+            {botMode === 'api' ? t('tokens.bannerSuffixApi') : t('tokens.bannerSuffixSimulated')}
           </p>
         </div>
       </div>

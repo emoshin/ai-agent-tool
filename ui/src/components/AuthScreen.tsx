@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { AlertCircle, Bot, KeyRound, Lock, Mail, ShieldCheck, User, UserPlus } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 import { loginUser, registerUser } from '../services/authService';
 import type { BackendAuthSession } from '../types/auth';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface AuthScreenProps {
   initialNotice?: string | null;
@@ -14,6 +16,7 @@ export function AuthScreen({
   onAuthenticated,
   onUseSimulatedMode,
 }: AuthScreenProps) {
+  const { t } = useI18n();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [subtitle, setSubtitle] = useState('');
@@ -34,7 +37,7 @@ export function AuthScreen({
           : await registerUser({ name, email, password, subtitle });
       onAuthenticated(session);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Authentication failed.');
+      setError(err instanceof Error ? err.message : t('auth.failed'));
     } finally {
       setSubmitting(false);
     }
@@ -50,6 +53,10 @@ export function AuthScreen({
   return (
     <div className="flex min-h-dvh w-screen items-center justify-center bg-[#171717] p-4 text-[#ececec]">
       <div className="w-full max-w-md space-y-5 rounded-3xl border border-white/10 bg-[#212121] p-6 shadow-2xl sm:p-8">
+        <div className="flex justify-end">
+          <LanguageSwitcher />
+        </div>
+
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center">
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#10a37f]/20 text-[#10a37f]">
@@ -57,16 +64,14 @@ export function AuthScreen({
           </div>
           <h1 className="text-xl font-semibold text-white">AI Agent Tool</h1>
           <p className="mt-1 text-xs text-[#8e8ea0]">
-            {mode === 'login'
-              ? 'Sign in to chat with ChatGPT & Claude or manage provider tokens'
-              : 'Create a workspace account to start chatting'}
+            {mode === 'login' ? t('auth.subtitleLogin') : t('auth.subtitleRegister')}
           </p>
         </div>
 
         {/* Mode Switch Tabs */}
         <div
           role="tablist"
-          aria-label="Authentication mode"
+          aria-label={t('auth.modeAria')}
           className="grid grid-cols-2 gap-1 rounded-xl border border-white/10 bg-[#171717] p-1"
         >
           <button
@@ -85,7 +90,7 @@ export function AuthScreen({
             ].join(' ')}
           >
             <KeyRound className="h-3.5 w-3.5" />
-            <span>Sign In</span>
+            <span>{t('common.signIn')}</span>
           </button>
           <button
             type="button"
@@ -103,7 +108,7 @@ export function AuthScreen({
             ].join(' ')}
           >
             <UserPlus className="h-3.5 w-3.5" />
-            <span>Create Account</span>
+            <span>{t('auth.createAccount')}</span>
           </button>
         </div>
 
@@ -124,7 +129,7 @@ export function AuthScreen({
             <>
               <div>
                 <label htmlFor="auth-name" className="mb-1 block text-xs font-medium text-[#b4b4b4]">
-                  Full Name
+                  {t('auth.fullName')}
                 </label>
                 <div className="relative flex items-center">
                   <User className="pointer-events-none absolute left-3 h-4 w-4 text-[#8e8ea0]" />
@@ -145,7 +150,7 @@ export function AuthScreen({
                   htmlFor="auth-subtitle"
                   className="mb-1 block text-xs font-medium text-[#b4b4b4]"
                 >
-                  Role / Title (optional)
+                  {t('auth.roleTitleOptional')}
                 </label>
                 <input
                   id="auth-subtitle"
@@ -161,7 +166,7 @@ export function AuthScreen({
 
           <div>
             <label htmlFor="auth-email" className="mb-1 block text-xs font-medium text-[#b4b4b4]">
-              Email Address
+              {t('auth.emailAddress')}
             </label>
             <div className="relative flex items-center">
               <Mail className="pointer-events-none absolute left-3 h-4 w-4 text-[#8e8ea0]" />
@@ -180,7 +185,7 @@ export function AuthScreen({
 
           <div>
             <label htmlFor="auth-password" className="mb-1 block text-xs font-medium text-[#b4b4b4]">
-              Password
+              {t('auth.password')}
             </label>
             <div className="relative flex items-center">
               <Lock className="pointer-events-none absolute left-3 h-4 w-4 text-[#8e8ea0]" />
@@ -205,11 +210,11 @@ export function AuthScreen({
           >
             {submitting
               ? mode === 'login'
-                ? 'Signing in...'
-                : 'Creating account...'
+                ? t('auth.signingIn')
+                : t('auth.creatingAccount')
               : mode === 'login'
-                ? 'Sign In'
-                : 'Create Account'}
+                ? t('common.signIn')
+                : t('auth.createAccount')}
           </button>
         </form>
 
@@ -218,22 +223,22 @@ export function AuthScreen({
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 font-semibold text-[#6ee7b7]">
               <ShieldCheck className="h-4 w-4 shrink-0" />
-              <span>Default Admin Credentials</span>
+              <span>{t('auth.defaultAdminCreds')}</span>
             </div>
             <button
               type="button"
               onClick={handleFillAdmin}
               className="rounded-lg bg-[#10a37f] px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-[#0d8c6d]"
             >
-              Fill Admin Login
+              {t('auth.fillAdminLogin')}
             </button>
           </div>
           <div className="mt-2 space-y-0.5 font-mono text-[11px] text-[#d1fae5]">
             <div>
-              Email: <span className="select-all text-white">admin@ai-agent-tool.dev</span>
+              {t('auth.emailLabel')} <span className="select-all text-white">admin@ai-agent-tool.dev</span>
             </div>
             <div>
-              Password: <span className="select-all text-white">admin123</span>
+              {t('auth.passwordLabel')} <span className="select-all text-white">admin123</span>
             </div>
           </div>
         </div>
@@ -245,7 +250,7 @@ export function AuthScreen({
             onClick={onUseSimulatedMode}
             className="text-xs text-[#8e8ea0] underline-offset-4 transition-colors hover:text-white hover:underline"
           >
-            Continue in Offline Simulated Mode
+            {t('auth.offlineSimulated')}
           </button>
         </div>
       </div>

@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { X } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 import type { BotSettings, UserProfile } from '../types/chat';
 import { AVATAR_PRESETS } from '../utils/defaults';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -26,6 +28,7 @@ export function SettingsModal({
   onLogout,
   onSave,
 }: SettingsModalProps) {
+  const { t } = useI18n();
   const [settings, setSettings] = useState<BotSettings>(botSettings);
   const [profile, setProfile] = useState<UserProfile>(userProfile);
   const [newPassword, setNewPassword] = useState('');
@@ -59,23 +62,34 @@ export function SettingsModal({
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-[#212121] p-6 text-[#ececec] shadow-2xl">
         <div className="mb-5 flex items-center justify-between">
           <h2 id="settings-modal-title" className="text-lg font-semibold text-white">
-            Bot & Profile Settings
+            {t('settings.title')}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-1.5 text-[#8e8ea0] hover:bg-white/10 hover:text-white"
-            aria-label="Close settings"
+            aria-label={t('settings.closeAria')}
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Language */}
+          <section className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#1a1a1a] px-3.5 py-3">
+            <div>
+              <h3 className="text-xs font-semibold tracking-wider text-[#ececec] uppercase">
+                {t('settings.languageSection')}
+              </h3>
+              <p className="mt-0.5 text-[11px] text-[#8e8ea0]">{t('settings.languageHint')}</p>
+            </div>
+            <LanguageSwitcher compact={false} />
+          </section>
+
           {/* AI Bot Connection */}
           <section className="space-y-3">
             <h3 className="text-xs font-semibold tracking-wider text-[#8e8ea0] uppercase">
-              AI Bot Adapter
+              {t('settings.adapterSection')}
             </h3>
 
             <div className="grid grid-cols-2 gap-2">
@@ -89,8 +103,8 @@ export function SettingsModal({
                     : 'border-white/10 bg-[#2a2a2a] text-[#b4b4b4] hover:border-white/20',
                 ].join(' ')}
               >
-                <div className="font-medium">Simulated Bot</div>
-                <div className="mt-0.5 text-xs text-[#8e8ea0]">Built-in local streaming</div>
+                <div className="font-medium">{t('chat.modeSimulated')}</div>
+                <div className="mt-0.5 text-xs text-[#8e8ea0]">{t('settings.simulatedDesc')}</div>
               </button>
 
               <button
@@ -103,8 +117,8 @@ export function SettingsModal({
                     : 'border-white/10 bg-[#2a2a2a] text-[#b4b4b4] hover:border-white/20',
                 ].join(' ')}
               >
-                <div className="font-medium">REST / SSE API</div>
-                <div className="mt-0.5 text-xs text-[#8e8ea0]">Connect live backend</div>
+                <div className="font-medium">{t('chat.modeApi')}</div>
+                <div className="mt-0.5 text-xs text-[#8e8ea0]">{t('settings.apiDesc')}</div>
               </button>
             </div>
 
@@ -114,7 +128,7 @@ export function SettingsModal({
                   {authEmail ? (
                     <>
                       <span className="truncate text-[#d1fae5]">
-                        Signed in: <strong className="text-white">{authEmail}</strong> ({authRole})
+                        {t('settings.signedInLabel')} <strong className="text-white">{authEmail}</strong> ({authRole})
                       </span>
                       {onLogout && (
                         <button
@@ -125,13 +139,13 @@ export function SettingsModal({
                           }}
                           className="shrink-0 rounded-md bg-white/10 px-2 py-1 text-[11px] font-medium text-white hover:bg-white/20"
                         >
-                          Sign out
+                          {t('common.signOut')}
                         </button>
                       )}
                     </>
                   ) : (
                     <>
-                      <span className="text-amber-200">Sign in required for Spring Boot API</span>
+                      <span className="text-amber-200">{t('settings.signInRequired')}</span>
                       {onOpenAuth && (
                         <button
                           type="button"
@@ -141,7 +155,7 @@ export function SettingsModal({
                           }}
                           className="shrink-0 rounded-md bg-sky-500 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-sky-400"
                         >
-                          Sign In
+                          {t('common.signIn')}
                         </button>
                       )}
                     </>
@@ -150,7 +164,7 @@ export function SettingsModal({
 
                 <div>
                   <label className="mb-1 block text-xs font-medium text-[#b4b4b4]" htmlFor="api-endpoint">
-                    Endpoint URL (POST JSON / SSE)
+                    {t('settings.endpointLabel')}
                   </label>
                   <input
                     id="api-endpoint"
@@ -164,14 +178,14 @@ export function SettingsModal({
 
                 <div>
                   <label className="mb-1 block text-xs font-medium text-[#b4b4b4]" htmlFor="api-key">
-                    User Session JWT (auto-filled on login)
+                    {t('settings.jwtLabel')}
                   </label>
                   <input
                     id="api-key"
                     type="password"
                     value={settings.apiKey}
                     onChange={(e) => setSettings((s) => ({ ...s, apiKey: e.target.value }))}
-                    placeholder="Bearer JWT token"
+                    placeholder={t('settings.jwtPlaceholder')}
                     className="w-full rounded-lg border border-white/10 bg-[#2a2a2a] px-3 py-2 text-sm text-white outline-none focus:border-white/30"
                   />
                 </div>
@@ -180,7 +194,7 @@ export function SettingsModal({
 
             <div>
               <label className="mb-1 block text-xs font-medium text-[#b4b4b4]" htmlFor="system-prompt">
-                System Prompt
+                {t('settings.systemPromptLabel')}
               </label>
               <textarea
                 id="system-prompt"
@@ -195,13 +209,13 @@ export function SettingsModal({
           {/* User Profile */}
           <section className="space-y-3 border-t border-white/10 pt-4">
             <h3 className="text-xs font-semibold tracking-wider text-[#8e8ea0] uppercase">
-              User Profile
+              {t('settings.profileSection')}
             </h3>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-medium text-[#b4b4b4]" htmlFor="user-name">
-                  Display Name
+                  {t('settings.displayName')}
                 </label>
                 <input
                   id="user-name"
@@ -214,7 +228,7 @@ export function SettingsModal({
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[#b4b4b4]" htmlFor="user-subtitle">
-                  Subtitle / Role
+                  {t('settings.subtitleRole')}
                 </label>
                 <input
                   id="user-subtitle"
@@ -228,7 +242,7 @@ export function SettingsModal({
 
             <div>
               <label className="mb-1.5 block text-xs font-medium text-[#b4b4b4]" htmlFor="avatar-url">
-                User Image URL (or pick preset)
+                {t('settings.avatarUrlLabel')}
               </label>
               <div className="mb-2 flex items-center gap-2">
                 {AVATAR_PRESETS.map((preset, idx) => (
@@ -240,9 +254,13 @@ export function SettingsModal({
                       'rounded-full p-0.5 transition-transform hover:scale-105',
                       profile.avatarUrl === preset ? 'ring-2 ring-[#10a37f]' : 'opacity-75',
                     ].join(' ')}
-                    aria-label={`Select preset avatar ${idx + 1}`}
+                    aria-label={t('settings.selectPresetAvatar', { index: idx + 1 })}
                   >
-                    <img src={preset} alt={`Preset avatar ${idx + 1}`} className="h-9 w-9 rounded-full" />
+                    <img
+                      src={preset}
+                      alt={t('settings.presetAvatarAlt', { index: idx + 1 })}
+                      className="h-9 w-9 rounded-full"
+                    />
                   </button>
                 ))}
               </div>
@@ -259,7 +277,7 @@ export function SettingsModal({
             {authEmail && (
               <div>
                 <label className="mb-1 block text-xs font-medium text-[#b4b4b4]" htmlFor="new-password">
-                  New Password (optional)
+                  {t('settings.newPasswordOptional')}
                 </label>
                 <input
                   id="new-password"
@@ -267,7 +285,7 @@ export function SettingsModal({
                   minLength={6}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Leave blank to keep current password"
+                  placeholder={t('settings.newPasswordPlaceholder')}
                   className="w-full rounded-lg border border-white/10 bg-[#2a2a2a] px-3 py-2 text-xs text-white outline-none focus:border-white/30"
                 />
               </div>
@@ -280,13 +298,13 @@ export function SettingsModal({
               onClick={onClose}
               className="rounded-xl px-4 py-2 text-sm text-[#b4b4b4] hover:bg-white/10 hover:text-white"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-[#212121] hover:bg-[#e5e5e5]"
             >
-              Save changes
+              {t('common.saveChanges')}
             </button>
           </div>
         </form>

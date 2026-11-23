@@ -18,6 +18,7 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
+import { useI18n, type TranslationKey } from '../../i18n/I18nContext';
 import {
   backupAdminChat,
   backupAdminUserChats,
@@ -44,6 +45,7 @@ import {
   downloadJsonBackup,
 } from '../../utils/chatBackup';
 import { estimateUserCostBreakdown, formatTokenCount, formatUsd } from '../../utils/tokens';
+import { LanguageSwitcher } from '../LanguageSwitcher';
 import { AddUserModal } from './AddUserModal';
 import { ProviderTokensTab } from './ProviderTokensTab';
 import { SetUserPasswordModal } from './SetUserPasswordModal';
@@ -82,6 +84,7 @@ export function AdminPage({
   onSaveProviderToken,
   onDeleteProviderToken,
 }: AdminPageProps) {
+  const { t, dateLocale } = useI18n();
   const [activeTab, setActiveTab] = useState<AdminTab>('users');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | UserStatus>('all');
@@ -163,11 +166,16 @@ export function AdminPage({
           : buildChatBackupPayload(user, chat);
       const filename = `chat-backup-${chat.id}.json`;
       downloadJsonBackup(filename, payload);
-      const notice = `Backed up "${chat.title}" (${payload.messageCount} messages${payload.deletedByUser ? ', deleted by user' : ''}) to ${filename}.`;
+      const notice = t('admin.backup.singleNotice', {
+        title: chat.title,
+        count: payload.messageCount,
+        deletedSuffix: payload.deletedByUser ? t('admin.backup.deletedSuffix') : '',
+        filename,
+      });
       setBackupNotice(notice);
       return notice;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to create chat backup.';
+      const msg = err instanceof Error ? err.message : t('admin.backup.singleError');
       setBackupNotice(msg);
       throw err;
     } finally {
@@ -184,11 +192,16 @@ export function AdminPage({
           : buildUserChatsBackupPayload(user);
       const filename = `user-chats-backup-${user.id}.json`;
       downloadJsonBackup(filename, payload);
-      const notice = `Backed up ${payload.totalChats} chats (${payload.deletedChats} deleted by user) for ${user.name} to ${filename}.`;
+      const notice = t('admin.backup.userNotice', {
+        total: payload.totalChats,
+        deleted: payload.deletedChats,
+        name: user.name,
+        filename,
+      });
       setBackupNotice(notice);
       return notice;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to create user chats backup.';
+      const msg = err instanceof Error ? err.message : t('admin.backup.userError');
       setBackupNotice(msg);
       throw err;
     } finally {
@@ -206,10 +219,14 @@ export function AdminPage({
       const filename = 'workspace-chats-backup.json';
       downloadJsonBackup(filename, payload);
       setBackupNotice(
-        `Backed up ${payload.totalChats} chats (${payload.deletedChats} deleted by user) to ${filename}.`
+        t('admin.backup.workspaceNotice', {
+          total: payload.totalChats,
+          deleted: payload.deletedChats,
+          filename,
+        })
       );
     } catch (err) {
-      setBackupNotice(err instanceof Error ? err.message : 'Failed to create workspace backup.');
+      setBackupNotice(err instanceof Error ? err.message : t('admin.backup.workspaceError'));
     } finally {
       setBackupBusy(false);
     }
@@ -224,8 +241,7 @@ export function AdminPage({
         totalSpendUsd: 0,
         remainingBalanceSupported: false,
         source: 'simulated',
-        message:
-          'Simulated mode uses token-based USD estimates on the left. Switch to API mode (Spring Boot backend) and sign in as Admin to query OpenAI /v1/organization/costs.',
+        message: t('admin.billing.simulatedInfo'),
       });
       return;
     }
@@ -237,7 +253,7 @@ export function AdminPage({
         : await fetchOpenAiOrgCosts(authToken || '', openAiAdminKey, 30);
       setOrgCostsResult(result);
     } catch (err) {
-      setOrgCostsError(err instanceof Error ? err.message : 'Failed to query OpenAI billing.');
+      setOrgCostsError(err instanceof Error ? err.message : t('admin.billing.queryError'));
     } finally {
       setOrgCostsLoading(false);
     }
@@ -251,7 +267,9 @@ export function AdminPage({
       await setAdminUserPassword(authToken, userId, password);
     }
     setPasswordNotice(
-      `Password updated for ${targetUser ? `${targetUser.name} (${targetUser.email})` : 'user'}.`
+      t('admin.passwordUpdated', {
+        target: targetUser ? `${targetUser.name} (${targetUser.email})` : 'user',
+      })
     );
   };
 
@@ -282,7 +300,7 @@ export function AdminPage({
             className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#242424] px-3 py-1.5 text-sm font-medium text-[#ececec] transition-colors hover:bg-[#2f2f2f]"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Back to Chat</span>
+            <span>{t('admin.backToChat')}</span>
           </button>
 
           <div className="flex items-center gap-2.5">
@@ -290,29 +308,32 @@ export function AdminPage({
               <Shield className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-base font-semibold text-white sm:text-lg">Admin Console</h1>
+              <h1 className="text-base font-semibold text-white sm:text-lg">{t('admin.title')}</h1>
               <p className="hidden text-xs text-[#8e8ea0] sm:block">
-                Manage users, monitor token consumption, and inspect chats
+                {t('admin.subtitle')}
               </p>
             </div>
           </div>
         </div>
 
-        {activeTab === 'users' && (
-          <button
-            type="button"
-            onClick={() => setAddModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2 text-sm font-medium text-[#212121] transition-colors hover:bg-[#e5e5e5]"
-          >
-            <UserPlus className="h-4 w-4" />
-            <span>Add User</span>
-          </button>
-        )}
+        <div className="flex items-center gap-2.5">
+          <LanguageSwitcher />
+          {activeTab === 'users' && (
+            <button
+              type="button"
+              onClick={() => setAddModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2 text-sm font-medium text-[#212121] transition-colors hover:bg-[#e5e5e5]"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span>{t('admin.addUser')}</span>
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Admin Navigation Tabs */}
       <div className="shrink-0 border-b border-white/10 bg-[#171717] px-4 sm:px-6">
-        <div role="tablist" aria-label="Admin sections" className="mx-auto flex max-w-6xl gap-1">
+        <div role="tablist" aria-label={t('admin.sectionsAria')} className="mx-auto flex max-w-6xl gap-1">
           <button
             type="button"
             role="tab"
@@ -326,7 +347,7 @@ export function AdminPage({
             ].join(' ')}
           >
             <Users className="h-4 w-4" />
-            <span>User Statistics</span>
+            <span>{t('admin.tabUsers')}</span>
           </button>
 
           <button
@@ -342,7 +363,7 @@ export function AdminPage({
             ].join(' ')}
           >
             <KeyRound className="h-4 w-4" />
-            <span>API Tokens</span>
+            <span>{t('admin.tabTokens')}</span>
           </button>
         </div>
       </div>
@@ -360,29 +381,34 @@ export function AdminPage({
           ) : (
             <>
           {/* KPI Summary Cards */}
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5" aria-label="Workspace metrics">
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5" aria-label={t('admin.metricsAria')}>
             <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-4">
               <div className="flex items-center justify-between text-xs text-[#8e8ea0]">
-                <span>Total Users</span>
+                <span>{t('admin.kpi.totalUsers')}</span>
                 <Users className="h-4 w-4 text-[#10a37f]" />
               </div>
               <div className="mt-2 text-2xl font-semibold text-white">{stats.totalUsers}</div>
               <div className="mt-1 text-xs text-[#b4b4b4]">
-                {stats.activeCount} active · {stats.suspendedCount} suspended
+                {t('admin.kpi.activeSuspended', {
+                  active: stats.activeCount,
+                  suspended: stats.suspendedCount,
+                })}
               </div>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-4">
               <div className="flex items-center justify-between text-xs text-[#8e8ea0]">
-                <span>Tokens Consumed</span>
+                <span>{t('admin.kpi.tokensConsumed')}</span>
                 <Cpu className="h-4 w-4 text-sky-400" />
               </div>
               <div className="mt-2 text-2xl font-semibold text-white">
                 {formatTokenCount(stats.totalTokens)}
               </div>
               <div className="mt-1 text-xs text-[#b4b4b4]">
-                {formatTokenCount(stats.totalPromptTokens)} prompt ·{' '}
-                {formatTokenCount(stats.totalCompletionTokens)} completion
+                {t('admin.kpi.promptCompletion', {
+                  prompt: formatTokenCount(stats.totalPromptTokens),
+                  completion: formatTokenCount(stats.totalCompletionTokens),
+                })}
               </div>
             </div>
 
@@ -391,32 +417,39 @@ export function AdminPage({
               data-testid="admin-estimated-spend-card"
             >
               <div className="flex items-center justify-between text-xs text-[#8e8ea0]">
-                <span>Est. Funds Consumed</span>
+                <span>{t('admin.kpi.estFunds')}</span>
                 <DollarSign className="h-4 w-4 text-emerald-400" />
               </div>
               <div className="mt-2 text-2xl font-semibold text-emerald-400">
                 {formatUsd(stats.totalEstimatedUsd)}
               </div>
               <div className="mt-1 text-xs text-[#b4b4b4]">
-                OpenAI {formatUsd(stats.totalOpenAiUsd)} · Claude {formatUsd(stats.totalAnthropicUsd)}
+                {t('admin.kpi.estFundsBreakdown', {
+                  openai: formatUsd(stats.totalOpenAiUsd),
+                  claude: formatUsd(stats.totalAnthropicUsd),
+                })}
               </div>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-4">
               <div className="flex items-center justify-between text-xs text-[#8e8ea0]">
-                <span>Conversations</span>
+                <span>{t('admin.kpi.conversations')}</span>
                 <MessageSquare className="h-4 w-4 text-violet-400" />
               </div>
               <div className="mt-2 text-2xl font-semibold text-white">{stats.totalChats}</div>
               <div className="mt-1 text-xs text-[#b4b4b4]">
-                {stats.totalMessages} messages
-                {stats.deletedChats > 0 ? ` · ${stats.deletedChats} deleted` : ' logged'}
+                {stats.deletedChats > 0
+                  ? t('admin.kpi.messagesWithDeleted', {
+                      count: stats.totalMessages,
+                      deleted: stats.deletedChats,
+                    })
+                  : t('admin.kpi.messagesLogged', { count: stats.totalMessages })}
               </div>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-4">
               <div className="flex items-center justify-between text-xs text-[#8e8ea0]">
-                <span>Quota Utilization</span>
+                <span>{t('admin.kpi.quotaUtilization')}</span>
                 <Activity className="h-4 w-4 text-amber-400" />
               </div>
               <div className="mt-2 text-2xl font-semibold text-white">{stats.quotaPercent}%</div>
@@ -432,39 +465,38 @@ export function AdminPage({
           {/* Spend Estimation & OpenAI Billing Check */}
           <section
             className="grid grid-cols-1 gap-4 lg:grid-cols-2"
-            aria-label="Funds consumption and OpenAI billing"
+            aria-label={t('admin.spend.title')}
           >
             <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-white">
-                  Approximate Funds Consumption (Token-Based)
+                  {t('admin.spend.title')}
                 </h2>
                 <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
-                  Total {formatUsd(stats.totalEstimatedUsd)}
+                  {t('admin.spend.totalBadge', { amount: formatUsd(stats.totalEstimatedUsd) })}
                 </span>
               </div>
               <p className="mt-1 text-xs text-[#8e8ea0]">
-                Estimated from logged input/output tokens per model using public API list rates (USD per
-                1M tokens).
+                {t('admin.spend.description')}
               </p>
 
               <div className="mt-3 grid grid-cols-2 gap-2.5 text-xs">
                 <div className="rounded-xl border border-white/10 bg-[#171717] px-3 py-2">
-                  <div className="text-[#8e8ea0]">OpenAI (ChatGPT)</div>
+                  <div className="text-[#8e8ea0]">{t('admin.spend.openaiTitle')}</div>
                   <div className="mt-0.5 text-base font-semibold text-white">
                     {formatUsd(stats.totalOpenAiUsd)}
                   </div>
                   <div className="mt-0.5 text-[11px] text-[#8e8ea0]">
-                    4o: $2.50/$10 · o3-mini: $1.10/$4.40
+                    {t('admin.spend.openaiRates')}
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-[#171717] px-3 py-2">
-                  <div className="text-[#8e8ea0]">Anthropic (Claude)</div>
+                  <div className="text-[#8e8ea0]">{t('admin.spend.anthropicTitle')}</div>
                   <div className="mt-0.5 text-base font-semibold text-white">
                     {formatUsd(stats.totalAnthropicUsd)}
                   </div>
                   <div className="mt-0.5 text-[11px] text-[#8e8ea0]">
-                    Sonnet 4: $3/$15 · Opus 4: $15/$75
+                    {t('admin.spend.anthropicRates')}
                   </div>
                 </div>
               </div>
@@ -472,14 +504,14 @@ export function AdminPage({
 
             <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-sm font-semibold text-white">OpenAI Platform Spend & Balance</h2>
+                <h2 className="text-sm font-semibold text-white">{t('admin.billing.title')}</h2>
                 <a
                   href="https://platform.openai.com/settings/organization/billing/overview"
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 text-xs text-sky-400 hover:underline"
                 >
-                  <span>OpenAI Billing</span>
+                  <span>{t('admin.billing.link')}</span>
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
@@ -487,10 +519,13 @@ export function AdminPage({
               <p className="mt-1 flex items-start gap-1.5 text-xs text-[#8e8ea0]">
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
                 <span>
-                  OpenAI does <strong>not</strong> expose remaining prepaid credit balance via any API
-                  key. You can query actual 30-day billed organization spend via{' '}
-                  <code className="text-[#d1d5db]">/v1/organization/costs</code> with an Organization
-                  Admin Key (<code className="text-[#d1d5db]">sk-admin-...</code>).
+                  {t('admin.billing.noteBefore')}
+                  <strong>{t('admin.billing.noteNot')}</strong>
+                  {t('admin.billing.noteMiddle')}
+                  <code className="text-[#d1d5db]">/v1/organization/costs</code>
+                  {t('admin.billing.noteAfter')}
+                  <code className="text-[#d1d5db]">sk-admin-...</code>
+                  {t('admin.billing.noteEnd')}
                 </span>
               </p>
 
@@ -499,8 +534,8 @@ export function AdminPage({
                   type="password"
                   value={openAiAdminKey}
                   onChange={(e) => setOpenAiAdminKey(e.target.value)}
-                  placeholder="Optional OpenAI Admin Key (sk-admin-...)"
-                  aria-label="OpenAI Organization Admin Key"
+                  placeholder={t('admin.billing.adminKeyPlaceholder')}
+                  aria-label={t('admin.billing.adminKeyAria')}
                   className="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#171717] px-3 py-1.5 text-xs text-[#ececec] placeholder-[#8e8ea0] outline-none focus:border-white/25"
                 />
                 <button
@@ -510,7 +545,9 @@ export function AdminPage({
                   className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-[#252525] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#303030] disabled:opacity-50"
                 >
                   <RefreshCw className={['h-3.5 w-3.5', orgCostsLoading ? 'animate-spin' : ''].join(' ')} />
-                  <span>{orgCostsLoading ? 'Checking...' : 'Check OpenAI Org Spend (30d)'}</span>
+                  <span>
+                    {orgCostsLoading ? t('admin.billing.checking') : t('admin.billing.checkButton')}
+                  </span>
                 </button>
               </div>
 
@@ -532,8 +569,10 @@ export function AdminPage({
                 >
                   {orgCostsResult.available && (
                     <div className="mb-1 font-semibold text-emerald-300">
-                      {orgCostsResult.periodDays}-Day OpenAI Billed Spend:{' '}
-                      {formatUsd(orgCostsResult.totalSpendUsd)}
+                      {t('admin.billing.resultTitle', {
+                        days: orgCostsResult.periodDays,
+                        amount: formatUsd(orgCostsResult.totalSpendUsd),
+                      })}
                     </div>
                   )}
                   <div>{orgCostsResult.message}</div>
@@ -550,8 +589,8 @@ export function AdminPage({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search users by name, email, or role..."
-                aria-label="Search users"
+                placeholder={t('admin.searchUsersPlaceholder')}
+                aria-label={t('admin.searchUsersAria')}
                 className="w-full rounded-xl border border-white/10 bg-[#1b1b1b] py-2 pr-3 pl-9 text-sm text-[#ececec] placeholder-[#8e8ea0] outline-none focus:border-white/25"
               />
             </div>
@@ -561,11 +600,11 @@ export function AdminPage({
                 type="button"
                 onClick={() => void handleBackupAllWorkspaceChats()}
                 disabled={backupBusy || stats.totalChats === 0}
-                aria-label="Backup all chats"
+                aria-label={t('admin.backupAllAria')}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#1b1b1b] px-3 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:bg-[#2a2a2a] disabled:opacity-50"
               >
                 <Download className="h-3.5 w-3.5 text-[#10a37f]" />
-                <span>Backup All Chats</span>
+                <span>{t('admin.backupAll')}</span>
               </button>
 
               <div className="inline-flex rounded-xl border border-white/10 bg-[#1b1b1b] p-1">
@@ -581,7 +620,7 @@ export function AdminPage({
                         : 'text-[#8e8ea0] hover:text-white',
                     ].join(' ')}
                   >
-                    {tab}
+                    {t(`admin.filter.${tab}` as TranslationKey)}
                   </button>
                 ))}
               </div>
@@ -598,9 +637,9 @@ export function AdminPage({
                 type="button"
                 onClick={() => setPasswordNotice(null)}
                 className="ml-3 text-[#8e8ea0] hover:text-white"
-                aria-label="Dismiss password notice"
+                aria-label={t('admin.dismissPasswordNoticeAria')}
               >
-                Dismiss
+                {t('common.dismiss')}
               </button>
             </div>
           )}
@@ -615,9 +654,9 @@ export function AdminPage({
                 type="button"
                 onClick={() => setBackupNotice(null)}
                 className="ml-3 text-[#8e8ea0] hover:text-white"
-                aria-label="Dismiss backup notice"
+                aria-label={t('admin.dismissBackupNoticeAria')}
               >
-                Dismiss
+                {t('common.dismiss')}
               </button>
             </div>
           )}
@@ -628,19 +667,19 @@ export function AdminPage({
               <table className="w-full border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-[#171717] text-xs font-semibold tracking-wider text-[#8e8ea0] uppercase">
-                    <th className="px-4 py-3.5">User</th>
-                    <th className="px-4 py-3.5">Status</th>
-                    <th className="px-4 py-3.5">Token Consumption</th>
-                    <th className="px-4 py-3.5">Est. Spend</th>
-                    <th className="px-4 py-3.5">Chats</th>
-                    <th className="px-4 py-3.5 text-right">Actions</th>
+                    <th className="px-4 py-3.5">{t('admin.table.user')}</th>
+                    <th className="px-4 py-3.5">{t('admin.table.status')}</th>
+                    <th className="px-4 py-3.5">{t('admin.table.tokenConsumption')}</th>
+                    <th className="px-4 py-3.5">{t('admin.table.estSpend')}</th>
+                    <th className="px-4 py-3.5">{t('admin.table.chats')}</th>
+                    <th className="px-4 py-3.5 text-right">{t('admin.table.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
                   {filteredUsers.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-10 text-center text-sm text-[#8e8ea0]">
-                        No users match your current filter.
+                        {t('admin.table.noMatch')}
                       </td>
                     </tr>
                   ) : (
@@ -666,7 +705,7 @@ export function AdminPage({
                             <div className="flex items-center gap-3">
                               <img
                                 src={user.avatarUrl}
-                                alt={`${user.name} avatar`}
+                                alt={t('sidebar.avatarAlt', { name: user.name })}
                                 className="h-9 w-9 shrink-0 rounded-full border border-white/15 object-cover"
                               />
                               <div className="min-w-0">
@@ -679,7 +718,7 @@ export function AdminPage({
                                   </span>
                                   {user.isCurrentUser && (
                                     <span className="rounded-md bg-[#10a37f]/20 px-1.5 py-0.5 text-[10px] font-semibold text-[#10a37f]">
-                                      You
+                                      {t('admin.user.you')}
                                     </span>
                                   )}
                                 </div>
@@ -703,7 +742,9 @@ export function AdminPage({
                                   user.status === 'active' ? 'bg-[#10a37f]' : 'bg-amber-400',
                                 ].join(' ')}
                               />
-                              {user.status === 'active' ? 'Active' : 'Suspended'}
+                              {user.status === 'active'
+                                ? t('admin.user.active')
+                                : t('admin.user.suspended')}
                             </span>
                           </td>
 
@@ -711,7 +752,7 @@ export function AdminPage({
                             <div className="w-44">
                               <div className="flex items-baseline justify-between text-xs">
                                 <span className="font-medium text-white">
-                                  {user.tokenUsage.totalTokens.toLocaleString()}
+                                  {user.tokenUsage.totalTokens.toLocaleString(dateLocale)}
                                 </span>
                                 <span className="text-[#8e8ea0]">
                                   / {formatTokenCount(user.tokenUsage.tokenLimit)} ({usagePct}%)
@@ -731,8 +772,10 @@ export function AdminPage({
                                 />
                               </div>
                               <div className="mt-1 text-[11px] text-[#8e8ea0]">
-                                In: {formatTokenCount(user.tokenUsage.promptTokens)} · Out:{' '}
-                                {formatTokenCount(user.tokenUsage.completionTokens)}
+                                {t('admin.user.inOut', {
+                                  inTokens: formatTokenCount(user.tokenUsage.promptTokens),
+                                  outTokens: formatTokenCount(user.tokenUsage.completionTokens),
+                                })}
                               </div>
                             </div>
                           </td>
@@ -745,10 +788,10 @@ export function AdminPage({
                               {userCost.openAiUsd > 0 && userCost.anthropicUsd > 0
                                 ? `OAI ${formatUsd(userCost.openAiUsd)} · CLD ${formatUsd(userCost.anthropicUsd)}`
                                 : userCost.anthropicUsd > 0
-                                  ? 'Claude est.'
+                                  ? t('admin.user.claudeEst')
                                   : userCost.openAiUsd > 0
-                                    ? 'OpenAI est.'
-                                    : 'No usage'}
+                                    ? t('admin.user.openaiEst')
+                                    : t('admin.user.noUsage')}
                             </div>
                           </td>
 
@@ -758,22 +801,29 @@ export function AdminPage({
                                 type="button"
                                 onClick={() => setInspectingUserId(user.id)}
                                 className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#252525] px-2.5 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:border-white/20 hover:bg-[#2f2f2f]"
-                                aria-label={`View chats for ${user.name}`}
+                                aria-label={t('admin.user.viewChatsAria', { name: user.name })}
                               >
                                 <MessageSquare className="h-3.5 w-3.5 text-[#10a37f]" />
                                 <span>
-                                  {user.chats.length} {user.chats.length === 1 ? 'chat' : 'chats'}
+                                  {user.chats.length}{' '}
+                                  {user.chats.length === 1
+                                    ? t('admin.user.chatSingular')
+                                    : t('admin.user.chatPlural')}
                                 </span>
                               </button>
 
                               {userDeletedChatsCount > 0 && (
                                 <span
                                   data-testid={`user-deleted-chats-badge-${user.id}`}
-                                  title={`${userDeletedChatsCount} chat(s) deleted by user (retained for admin review & backup)`}
+                                  title={t('admin.user.deletedBadgeTitle', {
+                                    count: userDeletedChatsCount,
+                                  })}
                                   className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-[11px] font-medium text-rose-300"
                                 >
                                   <Trash2 className="h-3 w-3" />
-                                  <span>{userDeletedChatsCount} deleted</span>
+                                  <span>
+                                    {t('admin.user.deletedBadge', { count: userDeletedChatsCount })}
+                                  </span>
                                 </span>
                               )}
 
@@ -782,8 +832,8 @@ export function AdminPage({
                                   type="button"
                                   onClick={() => void handleBackupUserChats(user)}
                                   disabled={backupBusy}
-                                  title={`Backup all chats for ${user.name}`}
-                                  aria-label={`Backup chats for ${user.name}`}
+                                  title={t('admin.user.backupUserChatsTitle', { name: user.name })}
+                                  aria-label={t('admin.user.backupUserChatsAria', { name: user.name })}
                                   className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-[#252525] p-1.5 text-[#b4b4b4] transition-colors hover:border-white/20 hover:bg-[#2f2f2f] hover:text-white disabled:opacity-50"
                                 >
                                   <Download className="h-3.5 w-3.5" />
@@ -802,16 +852,16 @@ export function AdminPage({
                                     setPendingDeleteUserId(null);
                                   }}
                                   className="rounded-lg bg-red-500/90 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-red-500"
-                                  aria-label={`Confirm delete ${user.name}`}
+                                  aria-label={t('admin.user.confirmDeleteAria', { name: user.name })}
                                 >
-                                  Confirm
+                                  {t('common.confirm')}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setPendingDeleteUserId(null)}
                                   className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-[#b4b4b4] hover:bg-white/10 hover:text-white"
                                 >
-                                  Cancel
+                                  {t('common.cancel')}
                                 </button>
                               </div>
                             ) : (
@@ -820,11 +870,11 @@ export function AdminPage({
                                   type="button"
                                   onClick={() => setPasswordTargetUserId(user.id)}
                                   className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-[#252525] px-2.5 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:border-white/20 hover:bg-[#2f2f2f]"
-                                  aria-label={`Set password for ${user.name}`}
-                                  title={`Set password for ${user.name}`}
+                                  aria-label={t('admin.user.setPasswordAria', { name: user.name })}
+                                  title={t('admin.user.setPasswordAria', { name: user.name })}
                                 >
                                   <KeyRound className="h-3.5 w-3.5 text-sky-400" />
-                                  <span>Password</span>
+                                  <span>{t('admin.user.setPassword')}</span>
                                 </button>
 
                                 <button
@@ -838,19 +888,19 @@ export function AdminPage({
                                   ].join(' ')}
                                   aria-label={
                                     user.status === 'active'
-                                      ? `Suspend ${user.name}`
-                                      : `Activate ${user.name}`
+                                      ? t('admin.user.suspendAria', { name: user.name })
+                                      : t('admin.user.activateAria', { name: user.name })
                                   }
                                 >
                                   {user.status === 'active' ? (
                                     <>
                                       <Ban className="h-3.5 w-3.5" />
-                                      <span>Suspend</span>
+                                      <span>{t('admin.user.suspend')}</span>
                                     </>
                                   ) : (
                                     <>
                                       <CheckCircle2 className="h-3.5 w-3.5" />
-                                      <span>Activate</span>
+                                      <span>{t('admin.user.activate')}</span>
                                     </>
                                   )}
                                 </button>
@@ -859,10 +909,10 @@ export function AdminPage({
                                   type="button"
                                   onClick={() => setPendingDeleteUserId(user.id)}
                                   className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-[#252525] px-2.5 py-1.5 text-xs font-medium text-[#b4b4b4] transition-colors hover:border-red-500/40 hover:bg-red-500/15 hover:text-red-300"
-                                  aria-label={`Delete ${user.name}`}
+                                  aria-label={t('admin.user.deleteAria', { name: user.name })}
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
-                                  <span>Delete</span>
+                                  <span>{t('common.delete')}</span>
                                 </button>
                               </div>
                             )}

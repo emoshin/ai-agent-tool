@@ -4,6 +4,7 @@ import { AuthScreen } from './components/AuthScreen';
 import { ChatArea } from './components/ChatArea';
 import { SettingsModal } from './components/SettingsModal';
 import { Sidebar } from './components/Sidebar';
+import { I18nProvider, useI18n } from './i18n/I18nContext';
 import { fetchCurrentUser, updateCurrentUserProfile } from './services/authService';
 import {
   createAdminUser,
@@ -59,7 +60,8 @@ export interface AppProps {
   };
 }
 
-export function App({ botAdapters }: AppProps = {}) {
+function AppContent({ botAdapters }: AppProps) {
+  const { t } = useI18n();
   const [chats, setChats] = useState<ChatSession[]>(() => loadChats());
   const [activeChatId, setActiveChatId] = useState<string | null>(() => loadActiveChatId(loadChats()));
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => loadSidebarCollapsed());
@@ -466,7 +468,7 @@ export function App({ botAdapters }: AppProps = {}) {
         ) {
           setAuthSession(null);
           setBotSettings((prev) => ({ ...prev, apiKey: '' }));
-          setAuthNotice('Authentication required (401/403). Please sign in to continue.');
+          setAuthNotice(t('auth.required401'));
           setShowAuthScreen(true);
         }
         setChats((prev) =>
@@ -500,7 +502,7 @@ export function App({ botAdapters }: AppProps = {}) {
         }
       }
     },
-    [authSession, botAdapters, botSettings, syncBackendWorkspace]
+    [authSession, botAdapters, botSettings, syncBackendWorkspace, t]
   );
 
   const handleSendMessage = useCallback(
@@ -887,6 +889,14 @@ export function App({ botAdapters }: AppProps = {}) {
         />
       )}
     </div>
+  );
+}
+
+export function App(props: AppProps = {}) {
+  return (
+    <I18nProvider>
+      <AppContent {...props} />
+    </I18nProvider>
   );
 }
 

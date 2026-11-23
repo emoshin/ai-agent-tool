@@ -1,5 +1,6 @@
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { ArrowUp, Square } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 interface ChatInputProps {
   value: string;
@@ -18,6 +19,7 @@ export function ChatInput({
   onSubmit,
   onStop,
 }: ChatInputProps) {
+  const { t } = useI18n();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -48,8 +50,8 @@ export function ChatInput({
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={disabled ? 'Account suspended — messaging disabled' : 'Message AI Bot...'}
-          aria-label="Message AI Bot"
+          placeholder={disabled ? t('chat.inputPlaceholderSuspended') : t('chat.inputPlaceholder')}
+          aria-label={t('chat.inputAria')}
           className="max-h-[200px] min-h-[26px] flex-1 resize-none bg-transparent py-1 text-[0.96875rem] leading-6 text-[#ececec] placeholder-[#8e8ea0] outline-none disabled:cursor-not-allowed disabled:opacity-60"
         />
 
@@ -58,8 +60,8 @@ export function ChatInput({
             type="button"
             onClick={onStop}
             className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#212121] transition-opacity hover:opacity-90"
-            title="Stop generating"
-            aria-label="Stop generating"
+            title={t('chat.stopGenerating')}
+            aria-label={t('chat.stopGenerating')}
           >
             <Square className="h-4 w-4 fill-current" />
           </button>
@@ -74,16 +76,19 @@ export function ChatInput({
                 ? 'bg-white text-[#212121] hover:bg-[#e5e5e5]'
                 : 'cursor-not-allowed bg-[#424242] text-[#8e8ea0]',
             ].join(' ')}
-            title="Send message"
-            aria-label="Send message"
+            title={t('chat.sendMessage')}
+            aria-label={t('chat.sendMessage')}
           >
             <ArrowUp className="h-4 w-4 stroke-[2.5]" />
           </button>
         )}
       </div>
       <p className="mt-2 text-center text-[11px] text-[#8e8ea0]">
-        AI can make mistakes. Press <kbd className="rounded bg-white/10 px-1 py-0.5">Enter</kbd> to send,{' '}
-        <kbd className="rounded bg-white/10 px-1 py-0.5">Shift+Enter</kbd> for newline.
+        {t('chat.disclaimerPrefix')}
+        <kbd className="rounded bg-white/10 px-1 py-0.5">Enter</kbd>
+        {t('chat.disclaimerMiddle')}
+        <kbd className="rounded bg-white/10 px-1 py-0.5">Shift+Enter</kbd>
+        {t('chat.disclaimerSuffix')}
       </p>
     </div>
   );

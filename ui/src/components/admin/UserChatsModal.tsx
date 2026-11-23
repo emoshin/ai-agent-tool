@@ -9,6 +9,7 @@ import {
   User as UserIcon,
   X,
 } from 'lucide-react';
+import { useI18n } from '../../i18n/I18nContext';
 import type { ManagedUser } from '../../types/admin';
 import type { ChatSession } from '../../types/chat';
 import { getModelDisplayName } from '../../utils/defaults';
@@ -38,6 +39,7 @@ export function UserChatsModal({
   onBackupChat,
   onBackupUserChats,
 }: UserChatsModalProps) {
+  const { t, dateLocale } = useI18n();
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [backupBusy, setBackupBusy] = useState(false);
@@ -92,12 +94,12 @@ export function UserChatsModal({
       const result = await onBackupChat(user, chat);
       setBackupStatus({
         type: 'success',
-        message: result || `Backed up "${chat.title}" to JSON.`,
+        message: result || t('userChats.backupSingleFallback', { title: chat.title }),
       });
     } catch (err) {
       setBackupStatus({
         type: 'error',
-        message: err instanceof Error ? err.message : 'Failed to back up chat.',
+        message: err instanceof Error ? err.message : t('userChats.backupSingleErr'),
       });
     } finally {
       setBackupBusy(false);
@@ -112,17 +114,25 @@ export function UserChatsModal({
       const result = await onBackupUserChats(user);
       setBackupStatus({
         type: 'success',
-        message: result || `Backed up ${user.chats.length} chat(s) for ${user.name}.`,
+        message:
+          result ||
+          t('userChats.backupUserFallback', {
+            count: user.chats.length,
+            name: user.name,
+          }),
       });
     } catch (err) {
       setBackupStatus({
         type: 'error',
-        message: err instanceof Error ? err.message : 'Failed to back up user chats.',
+        message: err instanceof Error ? err.message : t('userChats.backupUserErr'),
       });
     } finally {
       setBackupBusy(false);
     }
   };
+
+  const deletedPart =
+    deletedChatsCount > 0 ? t('userChats.deletedPart', { count: deletedChatsCount }) : '';
 
   return (
     <div
@@ -137,13 +147,13 @@ export function UserChatsModal({
           <div className="flex min-w-0 items-center gap-3">
             <img
               src={user.avatarUrl}
-              alt={`${user.name} avatar`}
+              alt={t('sidebar.avatarAlt', { name: user.name })}
               className="h-10 w-10 rounded-full border border-white/15 object-cover"
             />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h2 id="user-chats-modal-title" className="truncate text-base font-semibold text-white">
-                  {user.name} — Chat History
+                  {t('userChats.title', { name: user.name })}
                 </h2>
                 <span
                   className={[
@@ -153,14 +163,17 @@ export function UserChatsModal({
                       : 'bg-amber-500/20 text-amber-300',
                   ].join(' ')}
                 >
-                  {user.status}
+                  {user.status === 'active' ? t('admin.user.active') : t('admin.user.suspended')}
                 </span>
               </div>
               <p className="truncate text-xs text-[#8e8ea0]">
-                {user.email} · {user.chats.length} conversations
-                {deletedChatsCount > 0 ? ` (${deletedChatsCount} deleted by user)` : ''} ·{' '}
-                {formatTokenCount(user.tokenUsage.totalTokens)} total tokens · Est.{' '}
-                {formatUsd(userSpend.totalUsd)}
+                {t('userChats.summary', {
+                  email: user.email,
+                  count: user.chats.length,
+                  deletedPart,
+                  tokens: formatTokenCount(user.tokenUsage.totalTokens),
+                  cost: formatUsd(userSpend.totalUsd),
+                })}
               </p>
             </div>
           </div>
@@ -171,11 +184,11 @@ export function UserChatsModal({
                 type="button"
                 onClick={() => void handleBackupAllForUser()}
                 disabled={backupBusy}
-                aria-label={`Backup all chats for ${user.name}`}
+                aria-label={t('userChats.backupAllAria', { name: user.name })}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-[#242424] px-3 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:bg-[#2f2f2f] disabled:opacity-50"
               >
                 <Download className="h-3.5 w-3.5 text-[#10a37f]" />
-                <span>Backup Chats</span>
+                <span>{t('userChats.backupAll')}</span>
               </button>
             )}
 
@@ -183,7 +196,7 @@ export function UserChatsModal({
               type="button"
               onClick={onClose}
               className="rounded-lg p-1.5 text-[#8e8ea0] hover:bg-white/10 hover:text-white"
-              aria-label="Close chat inspector"
+              aria-label={t('userChats.closeAria')}
             >
               <X className="h-5 w-5" />
             </button>
@@ -206,7 +219,7 @@ export function UserChatsModal({
               onClick={() => setBackupStatus(null)}
               className="ml-3 text-[#8e8ea0] hover:text-white"
             >
-              Dismiss
+              {t('common.dismiss')}
             </button>
           </div>
         )}
@@ -222,8 +235,8 @@ export function UserChatsModal({
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Filter user chats..."
-                  aria-label="Filter user chats"
+                  placeholder={t('userChats.filterPlaceholder')}
+                  aria-label={t('userChats.filterAria')}
                   className="w-full rounded-lg border border-white/10 bg-[#212121] py-1.5 pr-3 pl-8 text-xs text-[#ececec] placeholder-[#8e8ea0] outline-none focus:border-white/25"
                 />
               </div>
@@ -232,7 +245,7 @@ export function UserChatsModal({
             <div className="flex-1 overflow-y-auto px-2 pb-3">
               {filteredChats.length === 0 ? (
                 <div className="px-3 py-8 text-center text-xs text-[#8e8ea0]">
-                  No chats found for this user.
+                  {t('userChats.noChats')}
                 </div>
               ) : (
                 <ul className="space-y-1">
@@ -260,8 +273,8 @@ export function UserChatsModal({
                             {chat.deletedByUser && (
                               <span
                                 data-testid={`admin-chat-deleted-icon-${chat.id}`}
-                                title="Deleted by user"
-                                aria-label="Deleted by user"
+                                title={t('userChats.deletedByUser')}
+                                aria-label={t('userChats.deletedByUser')}
                                 className="inline-flex shrink-0 items-center text-rose-400"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -270,10 +283,10 @@ export function UserChatsModal({
                           </div>
                           <div className="mt-1 flex items-center justify-between text-[11px] text-[#8e8ea0]">
                             <span>
-                              {chat.messages.length} msgs
-                              {chat.deletedByUser ? ' · Deleted' : ''}
+                              {t('userChats.msgsCount', { count: chat.messages.length })}
+                              {chat.deletedByUser ? t('userChats.deletedTag') : ''}
                             </span>
-                            <span>{formatTokenCount(tokens.totalTokens)} tok</span>
+                            <span>{t('userChats.tokShort', { tokens: formatTokenCount(tokens.totalTokens) })}</span>
                           </div>
                         </button>
 
@@ -283,8 +296,8 @@ export function UserChatsModal({
                             onClick={() => void handleBackupSingle(chat)}
                             disabled={backupBusy}
                             className="rounded-lg p-1.5 text-[#8e8ea0] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 hover:bg-white/10 hover:text-[#10a37f] disabled:opacity-40"
-                            title="Backup conversation JSON"
-                            aria-label={`Backup chat ${chat.title}`}
+                            title={t('userChats.backupChatTitle')}
+                            aria-label={t('userChats.backupChatAria', { title: chat.title })}
                           >
                             <Download className="h-3.5 w-3.5" />
                           </button>
@@ -295,8 +308,8 @@ export function UserChatsModal({
                             type="button"
                             onClick={() => onDeleteUserChat(user.id, chat.id)}
                             className="rounded-lg p-1.5 text-[#8e8ea0] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 hover:bg-white/10 hover:text-red-400"
-                            title="Permanently delete conversation"
-                            aria-label={`Delete chat ${chat.title}`}
+                            title={t('userChats.deleteChatTitle')}
+                            aria-label={t('userChats.deleteChatAria', { title: chat.title })}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -327,9 +340,9 @@ export function UserChatsModal({
                       >
                         <Trash2 className="h-3 w-3" />
                         <span>
-                          Deleted by user
+                          {t('userChats.deletedByUser')}
                           {selectedChat.deletedAt
-                            ? ` · ${new Date(selectedChat.deletedAt).toLocaleString()}`
+                            ? ` · ${new Date(selectedChat.deletedAt).toLocaleString(dateLocale)}`
                             : ''}
                         </span>
                       </span>
@@ -341,15 +354,23 @@ export function UserChatsModal({
                       <>
                         <span className="inline-flex items-center gap-1">
                           <Cpu className="h-3.5 w-3.5 text-[#10a37f]" />
-                          Prompt: {selectedBreakdown.promptTokens.toLocaleString()}
+                          {t('userChats.promptTokens', {
+                            count: selectedBreakdown.promptTokens.toLocaleString(dateLocale),
+                          })}
                         </span>
-                        <span>Completion: {selectedBreakdown.completionTokens.toLocaleString()}</span>
+                        <span>
+                          {t('userChats.completionTokens', {
+                            count: selectedBreakdown.completionTokens.toLocaleString(dateLocale),
+                          })}
+                        </span>
                         <span className="font-medium text-[#ececec]">
-                          Total: {selectedBreakdown.totalTokens.toLocaleString()} tokens
+                          {t('userChats.totalTokens', {
+                            count: selectedBreakdown.totalTokens.toLocaleString(dateLocale),
+                          })}
                         </span>
                         <span className="inline-flex items-center gap-0.5 font-medium text-emerald-400">
                           <DollarSign className="h-3 w-3" />
-                          Est. {formatUsd(selectedChatCostUsd)}
+                          {t('userChats.estCost', { cost: formatUsd(selectedChatCostUsd) })}
                         </span>
                       </>
                     )}
@@ -359,11 +380,11 @@ export function UserChatsModal({
                         type="button"
                         onClick={() => void handleBackupSingle(selectedChat)}
                         disabled={backupBusy}
-                        aria-label={`Backup selected chat ${selectedChat.title}`}
+                        aria-label={t('userChats.backupSelectedAria', { title: selectedChat.title })}
                         className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-[#171717] px-2.5 py-1 text-[11px] font-medium text-[#ececec] transition-colors hover:bg-[#2a2a2a] disabled:opacity-50"
                       >
                         <Download className="h-3 w-3 text-[#10a37f]" />
-                        <span>Backup Chat</span>
+                        <span>{t('userChats.backupChatBtn')}</span>
                       </button>
                     )}
                   </div>
@@ -372,7 +393,7 @@ export function UserChatsModal({
                 <div className="flex-1 space-y-4 overflow-y-auto p-5">
                   {selectedChat.messages.length === 0 ? (
                     <div className="py-12 text-center text-sm text-[#8e8ea0]">
-                      This conversation has no messages yet.
+                      {t('userChats.noMessages')}
                     </div>
                   ) : (
                     selectedChat.messages.map((msg) => {
@@ -398,8 +419,12 @@ export function UserChatsModal({
                               <span>{isUser ? user.name : getModelDisplayName(selectedChat.model)}</span>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span>{tokens.toLocaleString()} tokens</span>
-                              <span>{new Date(msg.createdAt).toLocaleString()}</span>
+                              <span>
+                                {t('userChats.tokensCount', {
+                                  count: tokens.toLocaleString(dateLocale),
+                                })}
+                              </span>
+                              <span>{new Date(msg.createdAt).toLocaleString(dateLocale)}</span>
                             </div>
                           </div>
 
@@ -419,7 +444,7 @@ export function UserChatsModal({
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-sm text-[#8e8ea0]">
                 <MessageSquare className="mb-2 h-8 w-8 opacity-40" />
-                <p>Select a conversation to inspect messages and token metrics.</p>
+                <p>{t('userChats.emptySelection')}</p>
               </div>
             )}
           </div>

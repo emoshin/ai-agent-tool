@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Eye, EyeOff, KeyRound, X } from 'lucide-react';
+import { useI18n } from '../../i18n/I18nContext';
 import type { ManagedUser } from '../../types/admin';
 
 interface SetUserPasswordModalProps {
@@ -13,6 +14,7 @@ export function SetUserPasswordModal({
   onClose,
   onSetPassword,
 }: SetUserPasswordModalProps) {
+  const { t } = useI18n();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -32,15 +34,15 @@ export function SetUserPasswordModal({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+      setError(t('setPassword.errMin'));
       return;
     }
     if (password.length > 100) {
-      setError('Password must be at most 100 characters.');
+      setError(t('setPassword.errMax'));
       return;
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('setPassword.errMismatch'));
       return;
     }
 
@@ -50,7 +52,7 @@ export function SetUserPasswordModal({
       await onSetPassword(user.id, password);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update password.');
+      setError(err instanceof Error ? err.message : t('setPassword.errFailed'));
     } finally {
       setSaving(false);
     }
@@ -71,7 +73,7 @@ export function SetUserPasswordModal({
             </div>
             <div>
               <h2 id="set-user-password-modal-title" className="text-base font-semibold text-white">
-                Set Password
+                {t('setPassword.title')}
               </h2>
               <p className="text-xs text-[#8e8ea0]">
                 {user.name} ({user.email})
@@ -82,7 +84,7 @@ export function SetUserPasswordModal({
             type="button"
             onClick={onClose}
             className="rounded-lg p-1.5 text-[#8e8ea0] hover:bg-white/10 hover:text-white"
-            aria-label="Close set password modal"
+            aria-label={t('setPassword.closeAria')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -103,7 +105,7 @@ export function SetUserPasswordModal({
               className="mb-1 block text-xs font-medium text-[#b4b4b4]"
               htmlFor="set-user-password-input"
             >
-              New Password
+              {t('setPassword.newPassword')}
             </label>
             <div className="relative">
               <input
@@ -114,7 +116,7 @@ export function SetUserPasswordModal({
                   setPassword(e.target.value);
                   setError(null);
                 }}
-                placeholder="Minimum 6 characters"
+                placeholder={t('setPassword.newPasswordPlaceholder')}
                 autoComplete="new-password"
                 className="w-full rounded-lg border border-white/10 bg-[#2a2a2a] py-2 pr-10 pl-3 text-sm text-white outline-none focus:border-white/30"
               />
@@ -122,7 +124,7 @@ export function SetUserPasswordModal({
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-1 text-[#8e8ea0] hover:text-white"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? t('setPassword.hideAria') : t('setPassword.showAria')}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -134,7 +136,7 @@ export function SetUserPasswordModal({
               className="mb-1 block text-xs font-medium text-[#b4b4b4]"
               htmlFor="confirm-user-password-input"
             >
-              Confirm Password
+              {t('setPassword.confirmPassword')}
             </label>
             <input
               id="confirm-user-password-input"
@@ -144,7 +146,7 @@ export function SetUserPasswordModal({
                 setConfirmPassword(e.target.value);
                 setError(null);
               }}
-              placeholder="Re-enter new password"
+              placeholder={t('setPassword.confirmPasswordPlaceholder')}
               autoComplete="new-password"
               className="w-full rounded-lg border border-white/10 bg-[#2a2a2a] px-3 py-2 text-sm text-white outline-none focus:border-white/30"
             />
@@ -157,14 +159,14 @@ export function SetUserPasswordModal({
               disabled={saving}
               className="rounded-xl px-4 py-2 text-sm text-[#b4b4b4] hover:bg-white/10 hover:text-white disabled:opacity-50"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={saving}
               className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-[#212121] hover:bg-[#e5e5e5] disabled:opacity-50"
             >
-              {saving ? 'Updating...' : 'Update password'}
+              {saving ? t('setPassword.updating') : t('setPassword.submit')}
             </button>
           </div>
         </form>

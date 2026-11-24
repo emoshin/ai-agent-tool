@@ -23,7 +23,7 @@ describe('Admin Console', () => {
     expect(within(spendCard).getByText('Est. Funds Consumed')).toBeInTheDocument();
     expect(within(spendCard).getByText(/^\$\d+\.\d{2}$/)).toBeInTheDocument();
 
-    // Marcus Vance has 112.5k input + 136.9k output tokens on claude-opus-4 ($15/$75) -> $11.96
+    // Marcus Vance has 112.5k input + 136.9k output tokens on claude-opus-5-5 ($15/$75) -> $11.96
     const marcusRow = screen.getByTestId('admin-user-row-user-marcus');
     expect(within(marcusRow).getByText('$11.96')).toBeInTheDocument();
 
@@ -269,12 +269,16 @@ describe('Admin Console', () => {
       await user.click(screen.getByRole('button', { name: 'Delete Getting started with AI Bot UI' }));
       expect(within(chatNav).queryByText('Getting started with AI Bot UI')).not.toBeInTheDocument();
 
-      // Admin opens Console and sees deleted badge on user row
+      // Admin opens Console and sees deleted-chats broom indicator with count on user row
       await user.click(screen.getByRole('button', { name: 'Admin Console' }));
       const currentUserRow = screen.getByTestId('admin-user-row-user-current');
-      expect(within(currentUserRow).getByTestId('user-deleted-chats-badge-user-current')).toHaveTextContent(
-        '1 deleted'
+      const deletedBadge = within(currentUserRow).getByTestId('user-deleted-chats-badge-user-current');
+      expect(deletedBadge).toHaveTextContent('1');
+      expect(deletedBadge).toHaveAttribute(
+        'aria-label',
+        '1 chat(s) deleted by user (retained for admin review & backup)'
       );
+      expect(within(deletedBadge).getByTestId('user-deleted-chats-broom-icon-user-current')).toBeInTheDocument();
 
       // Admin inspects user's chats and sees the deleted icon + badge
       await user.click(screen.getByRole('button', { name: 'View chats for Alex Morgan' }));

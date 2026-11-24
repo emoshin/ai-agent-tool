@@ -129,11 +129,11 @@ export function Sidebar({
         data-collapsed={isCollapsed ? 'true' : 'false'}
         className={[
           'fixed inset-y-0 left-0 z-40 flex h-full flex-col bg-[#171717] text-[#ececec] transition-all duration-200 ease-in-out md:static md:z-auto',
-          isMobileOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full md:translate-x-0',
+          isMobileOpen ? 'w-[min(280px,85vw)] translate-x-0 md:w-[260px]' : '-translate-x-full md:translate-x-0',
           isCollapsed ? 'md:w-0 md:overflow-hidden md:border-r-0' : 'md:w-[260px] md:border-r md:border-white/10',
         ].join(' ')}
       >
-        <div className="flex h-full w-[260px] flex-col">
+        <div className="flex h-full w-full flex-col md:w-[260px]">
           {/* Sidebar Top Actions */}
           <div className="flex items-center justify-between px-3 pt-3 pb-2">
             <button
@@ -146,7 +146,8 @@ export function Sidebar({
               title={t('sidebar.collapse')}
               aria-label={t('sidebar.collapse')}
             >
-              <PanelLeftClose className="h-5 w-5" />
+              <X className="h-5 w-5 md:hidden" />
+              <PanelLeftClose className="hidden h-5 w-5 md:block" />
             </button>
 
             <button
@@ -260,7 +261,7 @@ export function Sidebar({
                                     'flex items-center gap-0.5 pr-1.5 transition-opacity',
                                     isActive
                                       ? 'opacity-100'
-                                      : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
+                                      : 'opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100',
                                   ].join(' ')}
                                 >
                                   <button

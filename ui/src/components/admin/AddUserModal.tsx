@@ -69,18 +69,18 @@ export function AddUserModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 backdrop-blur-xs sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="add-user-modal-title"
     >
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#212121] p-6 text-[#ececec] shadow-2xl">
-        <div className="mb-5 flex items-center justify-between">
+      <div className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-white/10 bg-[#212121] p-4 text-[#ececec] shadow-2xl sm:p-6">
+        <div className="mb-4 flex items-center justify-between sm:mb-5">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#10a37f]/20 text-[#10a37f]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#10a37f]/20 text-[#10a37f]">
               <UserPlus className="h-5 w-5" />
             </div>
-            <h2 id="add-user-modal-title" className="text-lg font-semibold text-white">
+            <h2 id="add-user-modal-title" className="text-base font-semibold text-white sm:text-lg">
               {t('addUser.title')}
             </h2>
           </div>
@@ -156,7 +156,7 @@ export function AddUserModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-[#b4b4b4]" htmlFor="new-user-role">
                 {t('addUser.role')}

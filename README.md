@@ -29,7 +29,7 @@
 
 ### Chat Workspace (`ui/`)
 - **ChatGPT-style Interface**: Collapsible left sidebar with grouped chat history, search, inline rename/delete, and user profile avatar.
-- **Per-Chat Model Lock & Provider Icons**: Choose between OpenAI (`gpt-4o`, `o3-mini`) and Anthropic (`claude-sonnet-4`, `claude-opus-4`) when starting a new chat; the selected model is locked for that conversation and paired with a ChatGPT or Claude icon.
+- **Per-Chat Model Lock & Provider Icons**: Choose between OpenAI (`gpt-6.2-sol`, `gpt-5-nano`) and Anthropic (`claude-opus-5-5`, `claude-3-5-haiku`) when starting a new chat; the selected model is locked for that conversation and paired with a ChatGPT or Claude icon.
 - **Rich Streaming Responses**: Real-time Server-Sent Events (SSE) streaming with stop-generation, regenerate response, and GitHub-Flavored Markdown code rendering.
 - **Dual Adapter Mode**: Works out of the box in **Simulated Mode** for offline/UI testing, or connects to the Spring Boot **API Mode** backend.
 - **Bilingual Localization (EN / RU)**: Instant switching between **English** and **Russian** (`Русский`) across the Chat Workspace, Auth screen, Settings modal, and Admin Console, persisted in `localStorage`.
@@ -59,18 +59,23 @@
 ## Architecture
 
 ```text
-┌──────────────────────────┐        HTTP / SSE (JWT)       ┌───────────────────────────────┐
-│   React + Vite UI (:5173)│ ────────────────────────────▶ │ Spring Boot Backend (:8080)   │
-│  • Chat Workspace        │ ◀──────────────────────────── │  • JWT Auth & RBAC            │
-│  • AuthScreen & Settings │   /api/users, /api/chats,     │  • AES-256-GCM Token Vault    │
-│  • Admin Console         │   /api/chat, /api/admin       │  • OpenAI & Anthropic Proxy   │
-└──────────────────────────┘                               │  • Token & USD Cost Tracking  │
-                                                           └───────────┬────────────┬──────┘
-                                                                       │            │
-                                                    JPA / Flyway       ▼            ▼  HTTPS (Injected API Key)
-                                                           ┌────────────────┐  ┌───────────────────────────┐
-                                                           │ PostgreSQL 17  │  │ OpenAI API / Anthropic API│
-                                                           └────────────────┘  └───────────────────────────┘
+┌──────────────────────────┐        HTTP / SSE (JWT)       ┌──────────────────────────┐
+│   React + Vite UI (:5173)│ ────────────────────────────▶ │ Nginx API Gateway (:8080)│
+│  (Runs separately on     │ ◀──────────────────────────── │  • Docker DNS Round-Robin│
+│   host / static host)    │   /api/users, /api/chats,     │  • Unbuffered SSE Proxy  │
+└──────────────────────────┘   /api/chat, /api/admin       └────────────┬─────────────┘
+                                                                        │
+                                              ┌─────────────────────────┴─────────────────────────┐
+                                              ▼                                                   ▼
+                            ┌───────────────────────────────────┐               ┌───────────────────────────────────┐
+                            │ Spring Boot API Replica 1 (:8080) │      ...      │ Spring Boot API Replica N (:8080) │
+                            └─────────────────┬─────────────────┘               └─────────────────┬─────────────────┘
+                                              └─────────────────────────┬─────────────────────────┘
+                                                                        │
+                                                     JPA / Flyway       ▼            HTTPS (Injected API Key)
+                                                            ┌────────────────┐  ┌───────────────────────────┐
+                                                            │ PostgreSQL 17  │  │ OpenAI API / Anthropic API│
+                                                            └────────────────┘  └───────────────────────────┘
 ```
 
 ---
@@ -80,7 +85,8 @@
 | Layer | Technologies |
 | :--- | :--- |
 | **Backend** | Java 25, Spring Boot 3.5.16 (Web, Data JPA, Security, Validation), Flyway, Maven |
-| **Database** | PostgreSQL 17 (runtime via Docker Compose), H2 (integration tests) |
+| **Gateway & Scaling** | Docker Compose, Nginx (`1.27-alpine` with dynamic Docker DNS & unbuffered SSE) |
+| **Database** | PostgreSQL 17 (Docker Compose), H2 (integration tests) |
 | **Frontend** | React 19, TypeScript 5.8, Vite 6, Tailwind CSS v4, `react-markdown`, `remark-gfm`, `lucide-react` |
 | **Testing** | JUnit 5, Spring Boot Test, Vitest, React Testing Library |
 
@@ -88,30 +94,48 @@
 
 ## Quick Start
 
-### Prerequisites
-- **Java 25** and **Maven 3.9+**
-- **Node.js 20+** and **npm**
-- **Docker** (for PostgreSQL)
+### Option A: Scalable Containerized Backend + Separate UI (Recommended)
+Run **PostgreSQL + N Spring Boot REST replicas + Nginx gateway** in Docker (no UI container), and run the React UI separately on your host:
 
-### 1. Start PostgreSQL
 ```bash
-docker compose up -d
+# 1. Start PostgreSQL, 2 REST API instances, and the Nginx gateway on http://localhost:8080
+docker compose up -d --build --scale api=2
+
+# Scale up or down dynamically at any time (no UI restart required)
+docker compose up -d --scale api=4
 ```
-This starts a `postgres:17-alpine` container on port `5432` with database `ai_agent_tool`, user `ai_agent`, and password `ai_agent_password`.
 
-### 2. Start the Spring Boot Backend
 ```bash
-mvn spring-boot:run
+# 2a. Production UI (Node server — recommended on host)
+cd ui
+npm ci
+npm run start:prod
 ```
-The backend listens on `http://localhost:8080` and automatically runs Flyway migrations in `src/main/resources/db/migration`.
+Open **`http://localhost:3000`** in your browser. `npm run start:prod` builds minified production assets (`dist/`) and runs [`ui/server.mjs`](ui/server.mjs) with gzip compression, immutable asset caching, SPA fallback, and an unbuffered `/api/*` proxy to `API_BASE_URL` (default `http://localhost:8080`).
 
-### 3. Start the React Frontend
 ```bash
+# 2b. Production UI (Standalone Nginx container, separate from backend compose)
+cd ui
+docker compose up -d --build
+```
+Serves the production build via Nginx on **`http://localhost:3000`** (override port with `UI_PORT` and backend target with `API_UPSTREAM`).
+
+```bash
+# 2c. Development UI (Vite HMR dev server — for local development only)
 cd ui
 npm install
 npm run dev
 ```
-Open **`http://localhost:5173`** in your browser. Vite proxies all `/api/*` requests to `http://localhost:8080`.
+Open **`http://localhost:5173`** in your browser. Vite runs in development mode with hot-module reload and proxies `/api/*` to `http://localhost:8080` (`VITE_API_PROXY_TARGET`).
+
+### Option B: Run Backend Locally via Maven (PostgreSQL in Docker)
+```bash
+# Start only PostgreSQL
+docker compose up -d postgres
+
+# Run Spring Boot locally
+mvn spring-boot:run
+```
 
 ### Default Admin Credentials
 When `APP_SEED_ENABLED=true` (enabled by default), the backend seeds an initial administrator account on startup:
@@ -127,17 +151,20 @@ Next, sign in as Admin, open the **Admin Console → API Tokens** tab, and save 
 
 ## Configuration
 
-Backend settings in [`src/main/resources/application.yml`](src/main/resources/application.yml) can be overridden via environment variables:
+Backend and Docker settings in [`src/main/resources/application.yml`](src/main/resources/application.yml) and [`docker-compose.yml`](docker-compose.yml) can be overridden via environment variables:
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
-| `DB_URL` | `jdbc:postgresql://localhost:5432/ai_agent_tool` | PostgreSQL JDBC connection URL |
+| `API_PORT` | `8080` | Host port exposed by the Nginx API gateway |
+| `DB_URL` | `jdbc:postgresql://localhost:5432/ai_agent_tool` (`postgres:5432` in Docker) | PostgreSQL JDBC connection URL |
 | `DB_USERNAME` | `ai_agent` | Database username |
 | `DB_PASSWORD` | `ai_agent_password` | Database password |
-| `APP_SEED_ENABLED` | `true` | Seeds the default admin user if absent |
-| `APP_JWT_SECRET` | `dev-only-jwt-secret-...` | HMAC signing key for JWT tokens (min 32 bytes) |
+| `DB_POOL_MAX_SIZE` | `10` | HikariCP max connections per `api` replica |
+| `APP_SEED_ENABLED` | `true` | Seeds the default admin user if absent (concurrency-safe across replicas) |
+| `APP_JWT_SECRET` | `dev-only-jwt-secret-...` | Shared HMAC signing key for stateless JWT tokens across replicas (min 32 bytes) |
 | `APP_JWT_EXPIRATION_MS` | `86400000` (24h) | JWT access token expiration in milliseconds |
-| `APP_TOKEN_ENCRYPTION_KEY` | `dev-only-aes-key-...` | AES-256-GCM key used to encrypt provider API tokens |
+| `APP_TOKEN_ENCRYPTION_KEY` | `dev-only-aes-key-...` | Shared AES-256-GCM key used across replicas to encrypt provider API tokens |
+| `APP_CORS_ALLOWED_ORIGINS` | `http://localhost:5173,...` | Comma-separated allowed UI origins |
 
 ---
 
@@ -147,12 +174,10 @@ Approximate USD spend is calculated from logged prompt and completion tokens usi
 
 | Model ID | Provider | Input ($ / 1M) | Output ($ / 1M) |
 | :--- | :--- | :---: | :---: |
-| `gpt-4o` | OpenAI | $2.50 | $10.00 |
-| `gpt-4o-mini` | OpenAI | $0.15 | $0.60 |
-| `o3-mini` | OpenAI | $1.10 | $4.40 |
-| `claude-sonnet-4` | Anthropic | $3.00 | $15.00 |
-| `claude-opus-4` | Anthropic | $15.00 | $75.00 |
-| `claude-haiku` | Anthropic | $0.80 | $4.00 |
+| `gpt-6.2-sol` | OpenAI | $2.50 | $10.00 |
+| `gpt-5-nano` | OpenAI | $0.05 | $0.40 |
+| `claude-opus-5-5` | Anthropic | $15.00 | $75.00 |
+| `claude-3-5-haiku` | Anthropic | $0.80 | $4.00 |
 
 ---
 
@@ -214,7 +239,11 @@ ai-agent-tool/
 │   │   └── utils/                    # Token/cost math, storage, defaults
 │   ├── package.json
 │   └── vite.config.ts
-├── docker-compose.yml                # PostgreSQL 17 service
+├── docker/
+│   └── nginx.conf                    # Load-balancing SSE gateway for scaled API replicas
+├── .dockerignore                     # Excludes UI and build artifacts from backend image
+├── Dockerfile                        # Multi-stage Java 25 REST backend image (no UI)
+├── docker-compose.yml                # PostgreSQL 17 + scalable REST API + Nginx gateway
 ├── pom.xml                           # Maven build configuration
 └── README.md
 ```

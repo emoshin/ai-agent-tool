@@ -33,9 +33,15 @@ describe('Localization (English & Russian)', () => {
     expect(screen.getByPlaceholderText('Message AI Bot...')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New chat' })).toBeInTheDocument();
 
-    // Switch to Russian via header LanguageSwitcher
+    // Switch to Russian via header LanguageSwitcher dropdown
     const switcher = screen.getByTestId('language-switcher');
-    await user.click(within(switcher).getByRole('button', { name: 'Русский' }));
+    const trigger = within(switcher).getByRole('button', { name: /Language: English/i });
+    expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    const listbox = within(switcher).getByRole('listbox', { name: 'Language' });
+    await user.click(within(listbox).getByRole('option', { name: /Русский/i }));
 
     expect(localStorage.getItem('ai_agent_ui_locale_v1')).toBe('ru');
     expect(document.documentElement.lang).toBe('ru');
@@ -47,11 +53,13 @@ describe('Localization (English & Russian)', () => {
     await user.click(screen.getByRole('button', { name: 'Новый чат' }));
     expect(screen.getByText('Чем я могу помочь?')).toBeInTheDocument();
 
-    // Open Settings and verify Russian labels
+    // Open Settings and verify Russian labels + dropdown in Settings
     await user.click(screen.getByRole('button', { name: 'Открыть настройки' }));
     const settingsDialog = screen.getByRole('dialog');
     expect(within(settingsDialog).getByText('Настройки бота и профиля')).toBeInTheDocument();
     expect(within(settingsDialog).getByText('Язык интерфейса')).toBeInTheDocument();
+    const settingsSwitcher = within(settingsDialog).getByTestId('language-switcher');
+    expect(within(settingsSwitcher).getByRole('button', { name: /Язык: Русский/i })).toBeInTheDocument();
     await user.click(within(settingsDialog).getByRole('button', { name: 'Закрыть настройки' }));
 
     // Open Admin Console and verify Russian tabs, KPIs, and modals
@@ -70,17 +78,19 @@ describe('Localization (English & Russian)', () => {
     expect(screen.getByRole('heading', { name: 'Новый пользователь' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Отмена' }));
 
-    // Switch back to English from Admin header
+    // Switch back to English from Admin header dropdown
     const adminSwitcher = screen.getByTestId('language-switcher');
-    await user.click(within(adminSwitcher).getByRole('button', { name: 'English' }));
+    await user.click(within(adminSwitcher).getByRole('button', { name: /Язык: Русский/i }));
+    await user.click(within(adminSwitcher).getByRole('option', { name: /English/i }));
     expect(localStorage.getItem('ai_agent_ui_locale_v1')).toBe('en');
     expect(screen.getByText('Admin Console')).toBeInTheDocument();
 
-    // Return to Chat and open AuthScreen, switch to Russian on AuthScreen
+    // Return to Chat and open AuthScreen, switch to Russian via AuthScreen dropdown
     await user.click(screen.getByRole('button', { name: 'Back to Chat' }));
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
     const authSwitcher = screen.getByTestId('language-switcher');
-    await user.click(within(authSwitcher).getByRole('button', { name: 'Русский' }));
+    await user.click(within(authSwitcher).getByRole('button', { name: /Language: English/i }));
+    await user.click(within(authSwitcher).getByRole('option', { name: /Русский/i }));
     expect(screen.getByRole('tab', { name: 'Регистрация' })).toBeInTheDocument();
     expect(screen.getByText('Учётные данные администратора по умолчанию')).toBeInTheDocument();
   });

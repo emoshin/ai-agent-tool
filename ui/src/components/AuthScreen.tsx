@@ -7,16 +7,19 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface AuthScreenProps {
   initialNotice?: string | null;
+  showDefaultAdminHint?: boolean;
   onAuthenticated: (session: BackendAuthSession) => void;
   onUseSimulatedMode: () => void;
 }
 
 export function AuthScreen({
   initialNotice = null,
+  showDefaultAdminHint = true,
   onAuthenticated,
   onUseSimulatedMode,
 }: AuthScreenProps) {
   const { t } = useI18n();
+  const showAdminCredentialsHint = import.meta.env.DEV && showDefaultAdminHint;
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [subtitle, setSubtitle] = useState('');
@@ -44,6 +47,7 @@ export function AuthScreen({
   };
 
   const handleFillAdmin = () => {
+    if (!showAdminCredentialsHint) return;
     setMode('login');
     setEmail('admin@ai-agent-tool.dev');
     setPassword('admin123');
@@ -51,8 +55,8 @@ export function AuthScreen({
   };
 
   return (
-    <div className="flex min-h-dvh w-screen items-center justify-center bg-[#171717] p-4 text-[#ececec]">
-      <div className="w-full max-w-md space-y-5 rounded-3xl border border-white/10 bg-[#212121] p-6 shadow-2xl sm:p-8">
+    <div className="flex min-h-dvh w-full items-center justify-center bg-[#171717] p-3 text-[#ececec] sm:p-4">
+      <div className="w-full max-w-md space-y-4 rounded-2xl border border-white/10 bg-[#212121] p-5 shadow-2xl sm:space-y-5 sm:rounded-3xl sm:p-8">
         <div className="flex justify-end">
           <LanguageSwitcher />
         </div>
@@ -140,7 +144,7 @@ export function AuthScreen({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Alex Morgan"
-                    className="w-full rounded-xl border border-white/10 bg-[#2a2a2a] py-2 pr-3 pl-9 text-sm text-white placeholder-[#6b7280] outline-none focus:border-white/30"
+                    className="w-full rounded-xl border border-white/10 bg-[#2a2a2a] py-2 pr-3 pl-9 text-base text-white placeholder-[#6b7280] outline-none focus:border-white/30 sm:text-sm"
                   />
                 </div>
               </div>
@@ -158,7 +162,7 @@ export function AuthScreen({
                   value={subtitle}
                   onChange={(e) => setSubtitle(e.target.value)}
                   placeholder="Workspace Member"
-                  className="w-full rounded-xl border border-white/10 bg-[#2a2a2a] px-3 py-2 text-sm text-white placeholder-[#6b7280] outline-none focus:border-white/30"
+                  className="w-full rounded-xl border border-white/10 bg-[#2a2a2a] px-3 py-2 text-base text-white placeholder-[#6b7280] outline-none focus:border-white/30 sm:text-sm"
                 />
               </div>
             </>
@@ -178,7 +182,7 @@ export function AuthScreen({
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 autoComplete="email"
-                className="w-full rounded-xl border border-white/10 bg-[#2a2a2a] py-2 pr-3 pl-9 text-sm text-white placeholder-[#6b7280] outline-none focus:border-white/30"
+                className="w-full rounded-xl border border-white/10 bg-[#2a2a2a] py-2 pr-3 pl-9 text-base text-white placeholder-[#6b7280] outline-none focus:border-white/30 sm:text-sm"
               />
             </div>
           </div>
@@ -198,7 +202,7 @@ export function AuthScreen({
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••"
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                className="w-full rounded-xl border border-white/10 bg-[#2a2a2a] py-2 pr-3 pl-9 text-sm text-white placeholder-[#6b7280] outline-none focus:border-white/30"
+                className="w-full rounded-xl border border-white/10 bg-[#2a2a2a] py-2 pr-3 pl-9 text-base text-white placeholder-[#6b7280] outline-none focus:border-white/30 sm:text-sm"
               />
             </div>
           </div>
@@ -218,30 +222,32 @@ export function AuthScreen({
           </button>
         </form>
 
-        {/* Seeded Admin Helper */}
-        <div className="rounded-2xl border border-[#10a37f]/25 bg-[#10a37f]/10 p-3.5 text-xs">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 font-semibold text-[#6ee7b7]">
-              <ShieldCheck className="h-4 w-4 shrink-0" />
-              <span>{t('auth.defaultAdminCreds')}</span>
+        {/* Seeded Admin Helper (development mode only; stripped from production builds) */}
+        {showAdminCredentialsHint && (
+          <div className="rounded-2xl border border-[#10a37f]/25 bg-[#10a37f]/10 p-3.5 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 font-semibold text-[#6ee7b7]">
+                <ShieldCheck className="h-4 w-4 shrink-0" />
+                <span>{t('auth.defaultAdminCreds')}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleFillAdmin}
+                className="rounded-lg bg-[#10a37f] px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-[#0d8c6d]"
+              >
+                {t('auth.fillAdminLogin')}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleFillAdmin}
-              className="rounded-lg bg-[#10a37f] px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-[#0d8c6d]"
-            >
-              {t('auth.fillAdminLogin')}
-            </button>
+            <div className="mt-2 space-y-0.5 font-mono text-[11px] text-[#d1fae5]">
+              <div>
+                {t('auth.emailLabel')} <span className="select-all text-white">admin@ai-agent-tool.dev</span>
+              </div>
+              <div>
+                {t('auth.passwordLabel')} <span className="select-all text-white">admin123</span>
+              </div>
+            </div>
           </div>
-          <div className="mt-2 space-y-0.5 font-mono text-[11px] text-[#d1fae5]">
-            <div>
-              {t('auth.emailLabel')} <span className="select-all text-white">admin@ai-agent-tool.dev</span>
-            </div>
-            <div>
-              {t('auth.passwordLabel')} <span className="select-all text-white">admin123</span>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Fallback to Local Simulated Mode */}
         <div className="border-t border-white/10 pt-3 text-center">

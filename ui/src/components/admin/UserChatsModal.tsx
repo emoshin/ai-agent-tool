@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  BrushCleaning,
   Cpu,
   DollarSign,
   Download,
@@ -136,23 +137,23 @@ export function UserChatsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2 backdrop-blur-xs sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="user-chats-modal-title"
     >
-      <div className="flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1b1b1b] text-[#ececec] shadow-2xl">
+      <div className="flex h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1b1b1b] text-[#ececec] shadow-2xl sm:h-[85vh]">
         {/* Modal Header */}
-        <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-[#171717] px-5 py-4">
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-white/10 bg-[#171717] px-3.5 py-3 sm:px-5 sm:py-4">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
             <img
               src={user.avatarUrl}
               alt={t('sidebar.avatarAlt', { name: user.name })}
-              className="h-10 w-10 rounded-full border border-white/15 object-cover"
+              className="h-9 w-9 shrink-0 rounded-full border border-white/15 object-cover sm:h-10 sm:w-10"
             />
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 id="user-chats-modal-title" className="truncate text-base font-semibold text-white">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 id="user-chats-modal-title" className="truncate text-sm font-semibold text-white sm:text-base">
                   {t('userChats.title', { name: user.name })}
                 </h2>
                 <span
@@ -178,17 +179,17 @@ export function UserChatsModal({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {onBackupUserChats && user.chats.length > 0 && (
               <button
                 type="button"
                 onClick={() => void handleBackupAllForUser()}
                 disabled={backupBusy}
                 aria-label={t('userChats.backupAllAria', { name: user.name })}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-[#242424] px-3 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:bg-[#2f2f2f] disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-[#242424] px-2.5 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:bg-[#2f2f2f] disabled:opacity-50 sm:px-3"
               >
                 <Download className="h-3.5 w-3.5 text-[#10a37f]" />
-                <span>{t('userChats.backupAll')}</span>
+                <span className="hidden sm:inline">{t('userChats.backupAll')}</span>
               </button>
             )}
 
@@ -207,7 +208,7 @@ export function UserChatsModal({
           <div
             data-testid="modal-backup-status"
             className={[
-              'flex items-center justify-between border-b px-5 py-2 text-xs',
+              'flex items-center justify-between border-b px-3.5 py-2 text-xs sm:px-5',
               backupStatus.type === 'success'
                 ? 'border-[#10a37f]/30 bg-[#10a37f]/10 text-emerald-100'
                 : 'border-red-500/30 bg-red-500/10 text-red-200',
@@ -217,7 +218,7 @@ export function UserChatsModal({
             <button
               type="button"
               onClick={() => setBackupStatus(null)}
-              className="ml-3 text-[#8e8ea0] hover:text-white"
+              className="ml-3 shrink-0 text-[#8e8ea0] hover:text-white"
             >
               {t('common.dismiss')}
             </button>
@@ -227,8 +228,8 @@ export function UserChatsModal({
         {/* Split Pane Body */}
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
           {/* Left: User's Chat List */}
-          <div className="flex w-full shrink-0 flex-col border-b border-white/10 bg-[#171717] md:w-72 md:border-r md:border-b-0">
-            <div className="p-3">
+          <div className="flex max-h-[38%] w-full shrink-0 flex-col border-b border-white/10 bg-[#171717] md:max-h-none md:w-72 md:border-r md:border-b-0">
+            <div className="p-2.5 sm:p-3">
               <div className="relative flex items-center">
                 <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-[#8e8ea0]" />
                 <input
@@ -242,7 +243,7 @@ export function UserChatsModal({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-2 pb-3">
+            <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2.5 sm:pb-3">
               {filteredChats.length === 0 ? (
                 <div className="px-3 py-8 text-center text-xs text-[#8e8ea0]">
                   {t('userChats.noChats')}
@@ -258,7 +259,7 @@ export function UserChatsModal({
                           type="button"
                           onClick={() => setSelectedChatId(chat.id)}
                           className={[
-                            'flex min-w-0 flex-1 flex-col rounded-xl px-3 py-2.5 text-left transition-colors',
+                            'flex min-w-0 flex-1 flex-col rounded-xl px-3 py-2 text-left transition-colors sm:py-2.5',
                             isSelected
                               ? 'bg-[#2f2f2f] text-white'
                               : 'text-[#d1d5db] hover:bg-[#242424]',
@@ -277,7 +278,7 @@ export function UserChatsModal({
                                 aria-label={t('userChats.deletedByUser')}
                                 className="inline-flex shrink-0 items-center text-rose-400"
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <BrushCleaning className="h-3.5 w-3.5" aria-hidden="true" />
                               </span>
                             )}
                           </div>
@@ -295,7 +296,7 @@ export function UserChatsModal({
                             type="button"
                             onClick={() => void handleBackupSingle(chat)}
                             disabled={backupBusy}
-                            className="rounded-lg p-1.5 text-[#8e8ea0] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 hover:bg-white/10 hover:text-[#10a37f] disabled:opacity-40"
+                            className="rounded-lg p-1.5 text-[#8e8ea0] opacity-100 transition-opacity hover:bg-white/10 hover:text-[#10a37f] focus:opacity-100 disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
                             title={t('userChats.backupChatTitle')}
                             aria-label={t('userChats.backupChatAria', { title: chat.title })}
                           >
@@ -307,7 +308,7 @@ export function UserChatsModal({
                           <button
                             type="button"
                             onClick={() => onDeleteUserChat(user.id, chat.id)}
-                            className="rounded-lg p-1.5 text-[#8e8ea0] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 hover:bg-white/10 hover:text-red-400"
+                            className="rounded-lg p-1.5 text-[#8e8ea0] opacity-100 transition-opacity hover:bg-white/10 hover:text-red-400 focus:opacity-100 md:opacity-0 md:group-hover:opacity-100"
                             title={t('userChats.deleteChatTitle')}
                             aria-label={t('userChats.deleteChatAria', { title: chat.title })}
                           >
@@ -323,10 +324,10 @@ export function UserChatsModal({
           </div>
 
           {/* Right: Selected Chat Transcript */}
-          <div className="flex min-w-0 flex-1 flex-col bg-[#212121]">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#212121]">
             {selectedChat ? (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-5 py-3 text-xs text-[#b4b4b4]">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-3.5 py-2.5 text-xs text-[#b4b4b4] sm:px-5 sm:py-3">
                   <div className="flex flex-wrap items-center gap-2 font-medium text-white">
                     <ModelIcon modelId={selectedChat.model} className="h-4 w-4 shrink-0" />
                     <span>{selectedChat.title}</span>
@@ -338,7 +339,7 @@ export function UserChatsModal({
                         data-testid={`selected-chat-deleted-badge-${selectedChat.id}`}
                         className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-[11px] font-medium text-rose-300"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <BrushCleaning className="h-3 w-3" aria-hidden="true" />
                         <span>
                           {t('userChats.deletedByUser')}
                           {selectedChat.deletedAt
@@ -390,7 +391,7 @@ export function UserChatsModal({
                   </div>
                 </div>
 
-                <div className="flex-1 space-y-4 overflow-y-auto p-5">
+                <div className="flex-1 space-y-3 overflow-y-auto p-3 sm:space-y-4 sm:p-5">
                   {selectedChat.messages.length === 0 ? (
                     <div className="py-12 text-center text-sm text-[#8e8ea0]">
                       {t('userChats.noMessages')}
@@ -403,13 +404,13 @@ export function UserChatsModal({
                         <div
                           key={msg.id}
                           className={[
-                            'rounded-2xl border p-4',
+                            'rounded-2xl border p-3 sm:p-4',
                             isUser
                               ? 'border-white/10 bg-[#2a2a2a]'
                               : 'border-white/5 bg-[#1a1a1a]',
                           ].join(' ')}
                         >
-                          <div className="mb-2 flex items-center justify-between text-xs text-[#8e8ea0]">
+                          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[#8e8ea0]">
                             <div className="flex items-center gap-2 font-medium text-[#ececec]">
                               {isUser ? (
                                 <UserIcon className="h-3.5 w-3.5 text-sky-400" />
@@ -418,7 +419,7 @@ export function UserChatsModal({
                               )}
                               <span>{isUser ? user.name : getModelDisplayName(selectedChat.model)}</span>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                               <span>
                                 {t('userChats.tokensCount', {
                                   count: tokens.toLocaleString(dateLocale),

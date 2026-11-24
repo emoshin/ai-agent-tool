@@ -54,14 +54,14 @@ export function SettingsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 backdrop-blur-xs sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="settings-modal-title"
     >
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-[#212121] p-6 text-[#ececec] shadow-2xl">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 id="settings-modal-title" className="text-lg font-semibold text-white">
+      <div className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-[#212121] p-4 text-[#ececec] shadow-2xl sm:p-6">
+        <div className="mb-4 flex items-center justify-between sm:mb-5">
+          <h2 id="settings-modal-title" className="text-base font-semibold text-white sm:text-lg">
             {t('settings.title')}
           </h2>
           <button
@@ -74,9 +74,9 @@ export function SettingsModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           {/* Language */}
-          <section className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#1a1a1a] px-3.5 py-3">
+          <section className="flex flex-col items-start justify-between gap-3 rounded-xl border border-white/10 bg-[#1a1a1a] px-3.5 py-3 sm:flex-row sm:items-center">
             <div>
               <h3 className="text-xs font-semibold tracking-wider text-[#ececec] uppercase">
                 {t('settings.languageSection')}
@@ -92,7 +92,7 @@ export function SettingsModal({
               {t('settings.adapterSection')}
             </h3>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => setSettings((s) => ({ ...s, mode: 'simulated' }))}

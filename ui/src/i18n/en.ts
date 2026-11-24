@@ -13,10 +13,10 @@ export const en = {
   'common.russian': 'Русский',
 
   // Models & Starter Prompts
-  'model.gpt-4o.desc': 'OpenAI flagship model for fast, versatile reasoning',
-  'model.o3-mini.desc': 'OpenAI reasoning model for code, math, and architecture',
-  'model.claude-sonnet-4.desc': 'Anthropic balanced model for coding and clear analysis',
-  'model.claude-opus-4.desc': 'Anthropic deep reasoning model for complex engineering',
+  'model.gpt-6.2-sol.desc': 'OpenAI flagship model for fast, versatile reasoning',
+  'model.gpt-5-nano.desc': 'Lowest-cost OpenAI model for fast, lightweight tasks',
+  'model.claude-opus-5-5.desc': 'Anthropic deep reasoning model for complex engineering',
+  'model.claude-3-5-haiku.desc': 'Lowest-cost Anthropic model for quick, concise responses',
   'starter.1.title': 'Design a Java + React architecture',
   'starter.1.prompt':
     'How should I structure a Spring Boot or Java backend API to stream SSE responses to this React chat UI?',
@@ -164,9 +164,9 @@ export const en = {
   'admin.spend.description':
     'Estimated from logged input/output tokens per model using public API list rates (USD per 1M tokens).',
   'admin.spend.openaiTitle': 'OpenAI (ChatGPT)',
-  'admin.spend.openaiRates': '4o: $2.50/$10 · o3-mini: $1.10/$4.40',
+  'admin.spend.openaiRates': '6.2 Sol: $2.50/$10 · 5 Nano: $0.05/$0.40',
   'admin.spend.anthropicTitle': 'Anthropic (Claude)',
-  'admin.spend.anthropicRates': 'Sonnet 4: $3/$15 · Opus 4: $15/$75',
+  'admin.spend.anthropicRates': 'Opus 5.5: $15/$75 · 3.5 Haiku: $0.80/$4',
   'admin.billing.title': 'OpenAI Platform Spend & Balance',
   'admin.billing.link': 'OpenAI Billing',
   'admin.billing.noteBefore': 'OpenAI does ',
@@ -303,8 +303,8 @@ export const en = {
   'tokens.saveErr': 'Failed to save API token.',
   'tokens.removedMsg': '{label} token removed.',
   'tokens.removeErr': 'Failed to remove API token.',
-  'tokens.openaiDesc': 'Used by ChatGPT 4o and o3-mini agent workflows',
-  'tokens.anthropicDesc': 'Used by Claude Sonnet 4 and Opus 4 agent workflows',
+  'tokens.openaiDesc': 'Used by ChatGPT 6.2 Sol and GPT-5 Nano agent workflows',
+  'tokens.anthropicDesc': 'Used by Claude Opus 5.5 and Claude 3.5 Haiku agent workflows',
   'tokens.configured': 'Configured ({masked})',
   'tokens.notConfigured': 'Not configured',
   'tokens.openaiLabel': 'OpenAI / ChatGPT API Token',

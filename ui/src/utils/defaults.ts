@@ -50,28 +50,28 @@ export const AVATAR_PRESETS: string[] = [
 
 export const AVAILABLE_MODELS: ModelOption[] = [
   {
-    id: 'gpt-4o',
-    name: 'ChatGPT 4o',
+    id: 'gpt-6.2-sol',
+    name: 'ChatGPT 6.2 Sol',
     provider: 'openai',
     description: 'OpenAI flagship model for fast, versatile reasoning',
   },
   {
-    id: 'o3-mini',
-    name: 'ChatGPT o3-mini',
+    id: 'gpt-5-nano',
+    name: 'GPT-5 Nano',
     provider: 'openai',
-    description: 'OpenAI reasoning model for code, math, and architecture',
+    description: 'Lowest-cost OpenAI model for fast, lightweight tasks',
   },
   {
-    id: 'claude-sonnet-4',
-    name: 'Claude Sonnet 4',
-    provider: 'anthropic',
-    description: 'Anthropic balanced model for coding and clear analysis',
-  },
-  {
-    id: 'claude-opus-4',
-    name: 'Claude Opus 4',
+    id: 'claude-opus-5-5',
+    name: 'Claude Opus 5.5',
     provider: 'anthropic',
     description: 'Anthropic deep reasoning model for complex engineering',
+  },
+  {
+    id: 'claude-3-5-haiku',
+    name: 'Claude 3.5 Haiku',
+    provider: 'anthropic',
+    description: 'Lowest-cost Anthropic model for quick, concise responses',
   },
 ];
 
@@ -99,8 +99,11 @@ export function getModelProvider(modelId: string): ModelProvider {
 export function getModelDisplayName(modelId: string): string {
   const known = AVAILABLE_MODELS.find((m) => m.id === modelId);
   if (known) return known.name;
-  if (modelId === 'agent-4o') return 'ChatGPT 4o';
-  if (modelId === 'agent-o3-mini') return 'ChatGPT o3-mini';
+  if (modelId === 'gpt-4o' || modelId === 'agent-4o') return 'ChatGPT 4o';
+  if (modelId === 'o3-mini' || modelId === 'agent-o3-mini') return 'ChatGPT o3-mini';
+  if (modelId === 'claude-sonnet-4') return 'Claude Sonnet 4';
+  if (modelId === 'claude-opus-4') return 'Claude Opus 4';
+  if (modelId === 'claude-haiku') return 'Claude Haiku';
   return modelId;
 }
 
@@ -114,7 +117,7 @@ export const DEFAULT_BOT_SETTINGS: BotSettings = {
   mode: 'simulated',
   apiEndpoint: '/api/chat',
   apiKey: '',
-  defaultModel: 'gpt-4o',
+  defaultModel: 'gpt-6.2-sol',
   systemPrompt: 'You are a helpful, concise AI assistant integrated into ai-agent-tool.',
 };
 
@@ -145,7 +148,7 @@ export const INITIAL_CHATS: ChatSession[] = [
   {
     id: 'chat-welcome',
     title: 'Getting started with AI Bot UI',
-    model: 'gpt-4o',
+    model: 'gpt-6.2-sol',
     createdAt: now - 2 * HOUR,
     updatedAt: now - 2 * HOUR,
     messages: [
@@ -171,7 +174,7 @@ export const INITIAL_CHATS: ChatSession[] = [
   {
     id: 'chat-sse-example',
     title: 'SSE streaming contract for Java backend',
-    model: 'claude-sonnet-4',
+    model: 'claude-opus-5-5',
     createdAt: now - DAY - 3 * HOUR,
     updatedAt: now - DAY - 3 * HOUR,
     messages: [

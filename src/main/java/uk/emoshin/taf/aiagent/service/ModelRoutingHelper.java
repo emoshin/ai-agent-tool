@@ -37,6 +37,7 @@ public class ModelRoutingHelper {
             case "agent-o3-mini" -> "o3-mini";
             case "claude-sonnet-4" -> "claude-sonnet-4-20250514";
             case "claude-opus-4" -> "claude-opus-4-20250514";
+            case "claude-3-5-haiku", "claude-haiku" -> "claude-3-5-haiku-latest";
             default -> trimmed;
         };
     }

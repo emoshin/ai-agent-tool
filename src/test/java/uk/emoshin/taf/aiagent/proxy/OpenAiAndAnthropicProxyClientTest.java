@@ -66,7 +66,7 @@ class OpenAiAndAnthropicProxyClientTest {
         StringBuilder streamed = new StringBuilder();
         LlmCompletionResult result = client.streamCompletion(
                 new DecryptedProviderCredential(AgentProvider.OPENAI, "sk-openai-live-123", baseUrl + "/v1"),
-                "gpt-4o",
+                "gpt-6.2-sol",
                 List.of(
                         new LlmChatMessage("system", "Be helpful."),
                         new LlmChatMessage("user", "Say hi")
@@ -76,7 +76,7 @@ class OpenAiAndAnthropicProxyClientTest {
 
         assertThat(capturedAuthHeader.get()).isEqualTo("Bearer sk-openai-live-123");
         JsonNode sentJson = objectMapper.readTree(capturedBody.get());
-        assertThat(sentJson.path("model").asText()).isEqualTo("gpt-4o");
+        assertThat(sentJson.path("model").asText()).isEqualTo("gpt-6.2-sol");
         assertThat(sentJson.path("stream").asBoolean()).isTrue();
         assertThat(streamed.toString()).isEqualTo("Hello from ChatGPT!");
         assertThat(result.content()).isEqualTo("Hello from ChatGPT!");
@@ -125,7 +125,7 @@ class OpenAiAndAnthropicProxyClientTest {
         StringBuilder streamed = new StringBuilder();
         LlmCompletionResult result = client.streamCompletion(
                 new DecryptedProviderCredential(AgentProvider.ANTHROPIC, "sk-ant-live-456", baseUrl + "/v1"),
-                "claude-sonnet-4-20250514",
+                "claude-opus-5-5",
                 List.of(
                         new LlmChatMessage("system", "Answer concisely."),
                         new LlmChatMessage("user", "Say hi")
@@ -136,7 +136,7 @@ class OpenAiAndAnthropicProxyClientTest {
         assertThat(capturedApiKey.get()).isEqualTo("sk-ant-live-456");
         assertThat(capturedVersion.get()).isEqualTo("2023-06-01");
         JsonNode sentJson = objectMapper.readTree(capturedBody.get());
-        assertThat(sentJson.path("model").asText()).isEqualTo("claude-sonnet-4-20250514");
+        assertThat(sentJson.path("model").asText()).isEqualTo("claude-opus-5-5");
         assertThat(sentJson.path("system").asText()).isEqualTo("Answer concisely.");
         assertThat(sentJson.path("messages").size()).isEqualTo(1);
         assertThat(sentJson.path("messages").get(0).path("role").asText()).isEqualTo("user");

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import uk.emoshin.taf.aiagent.domain.AppUser;
@@ -38,7 +39,8 @@ public class DataSeeder implements ApplicationRunner {
         if (!appProperties.getSeed().isEnabled()) {
             return;
         }
-        if (appUserRepository.count() > 0) {
+        if (appUserRepository.count() > 0
+                || appUserRepository.findByEmailIgnoreCase("admin@ai-agent-tool.dev").isPresent()) {
             return;
         }
 
@@ -56,7 +58,11 @@ public class DataSeeder implements ApplicationRunner {
         admin.setCreatedAt(now);
         admin.setLastActiveAt(now);
 
-        appUserRepository.save(admin);
-        log.info("Seeded default admin account: admin@ai-agent-tool.dev");
+        try {
+            appUserRepository.save(admin);
+            log.info("Seeded default admin account: admin@ai-agent-tool.dev");
+        } catch (DataIntegrityViolationException ex) {
+            log.info("Default admin account already seeded by another service instance.");
+        }
     }
 }

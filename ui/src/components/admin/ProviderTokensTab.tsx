@@ -85,7 +85,7 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
 
   return (
     <div
-      className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-5"
+      className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-4 sm:p-5"
       data-testid={`provider-token-card-${config.provider}`}
     >
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -154,7 +154,7 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
                     : 'sk-ant-api03-...'
               }
               autoComplete="off"
-              className="w-full rounded-xl border border-white/10 bg-[#242424] py-2 pr-10 pl-9 font-mono text-sm text-white placeholder-[#6b7280] outline-none focus:border-white/30"
+              className="w-full rounded-xl border border-white/10 bg-[#242424] py-2 pr-10 pl-9 font-mono text-base text-white placeholder-[#6b7280] outline-none focus:border-white/30 sm:text-sm"
             />
             <button
               type="button"
@@ -187,7 +187,7 @@ function ProviderTokenCard({ config, onSaveToken, onDeleteToken }: ProviderCardP
               setFeedback(null);
             }}
             placeholder={isOpenAi ? 'https://api.openai.com/v1' : 'https://api.anthropic.com/v1'}
-            className="w-full rounded-xl border border-white/10 bg-[#242424] px-3 py-2 font-mono text-xs text-[#ececec] placeholder-[#6b7280] outline-none focus:border-white/30"
+            className="w-full rounded-xl border border-white/10 bg-[#242424] px-3 py-2 font-mono text-base text-[#ececec] placeholder-[#6b7280] outline-none focus:border-white/30 sm:text-xs"
           />
         </div>
 

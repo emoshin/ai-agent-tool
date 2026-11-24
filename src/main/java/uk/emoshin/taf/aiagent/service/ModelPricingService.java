@@ -24,10 +24,13 @@ public class ModelPricingService {
     public ModelPriceRate getRateForModel(String model) {
         String lower = model == null ? "" : model.trim().toLowerCase(Locale.ROOT);
 
+        if (lower.contains("gpt-5-nano")) {
+            return new ModelPriceRate(0.05, 0.40);
+        }
         if (lower.contains("gpt-4o-mini")) {
             return new ModelPriceRate(0.15, 0.60);
         }
-        if (lower.contains("gpt-4o") || "agent-4o".equals(lower)) {
+        if (lower.contains("gpt-6.2-sol") || lower.contains("gpt-4o") || "agent-4o".equals(lower)) {
             return new ModelPriceRate(2.50, 10.00);
         }
         if (lower.contains("o3-mini") || "agent-o3-mini".equals(lower)) {

@@ -149,7 +149,7 @@ describe('AI Bot Chat UI', () => {
 
     render(<App botAdapters={{ simulated: spyAdapter }} />);
 
-    // Existing seeded chats: first uses gpt-4o (ChatGPT icon), second uses claude-sonnet-4 (Claude icon)
+    // Existing seeded chats: first uses gpt-6.2-sol (ChatGPT icon), second uses claude-opus-5-5 (Claude icon)
     const chatGptItem = screen.getByRole('button', { name: 'Getting started with AI Bot UI' });
     expect(within(chatGptItem).getByTestId('chatgpt-icon')).toBeInTheDocument();
 
@@ -165,30 +165,33 @@ describe('AI Bot Chat UI', () => {
     const selectorBtn = screen.getByRole('button', { name: 'Select model for new chat' });
     expect(selectorBtn).toBeInTheDocument();
 
-    // Choose Anthropic Claude Sonnet 4
+    // Open selector and verify new flagship + lowest-price options exist, then choose Claude Opus 5.5
     await user.click(selectorBtn);
-    await user.click(screen.getByRole('option', { name: /Claude Sonnet 4/i }));
-    expect(selectorBtn).toHaveTextContent('Claude Sonnet 4');
+    expect(screen.getByRole('option', { name: /ChatGPT 6\.2 Sol/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /GPT-5 Nano/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Claude 3\.5 Haiku/i })).toBeInTheDocument();
+    await user.click(screen.getByRole('option', { name: /Claude Opus 5\.5/i }));
+    expect(selectorBtn).toHaveTextContent('Claude Opus 5.5');
 
-    // Send first message -> locks the model to Claude Sonnet 4
+    // Send first message -> locks the model to Claude Opus 5.5
     const input = screen.getByPlaceholderText('Message AI Bot...');
     await user.type(input, 'Hello Claude{Enter}');
 
     await waitFor(() => {
-      expect(screen.getByText('Reply using claude-sonnet-4')).toBeInTheDocument();
+      expect(screen.getByText('Reply using claude-opus-5-5')).toBeInTheDocument();
     });
-    expect(sentModels).toEqual(['claude-sonnet-4']);
+    expect(sentModels).toEqual(['claude-opus-5-5']);
 
-    // Selector is gone and replaced by locked badge showing Claude Sonnet 4
+    // Selector is gone and replaced by locked badge showing Claude Opus 5.5
     expect(screen.queryByRole('button', { name: 'Select model for new chat' })).not.toBeInTheDocument();
     const lockedBadge = screen.getByTestId('locked-model-badge');
-    expect(lockedBadge).toHaveTextContent('Claude Sonnet 4');
+    expect(lockedBadge).toHaveTextContent('Claude Opus 5.5');
     expect(within(lockedBadge).getByTestId('claude-icon')).toBeInTheDocument();
 
-    // Follow-up message in same chat continues using claude-sonnet-4
+    // Follow-up message in same chat continues using claude-opus-5-5
     await user.type(input, 'Follow up{Enter}');
     await waitFor(() => {
-      expect(sentModels).toEqual(['claude-sonnet-4', 'claude-sonnet-4']);
+      expect(sentModels).toEqual(['claude-opus-5-5', 'claude-opus-5-5']);
     });
 
     // New sidebar chat item displays Claude icon

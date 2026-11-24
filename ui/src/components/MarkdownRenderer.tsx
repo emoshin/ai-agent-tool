@@ -83,6 +83,13 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           pre({ children }) {
             return <>{children}</>;
           },
+          table({ children }) {
+            return (
+              <div className="my-4 max-w-full overflow-x-auto rounded-lg border border-white/12">
+                <table>{children}</table>
+              </div>
+            );
+          },
         }}
       >
         {content}

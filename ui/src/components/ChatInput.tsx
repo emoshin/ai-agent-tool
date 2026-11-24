@@ -41,8 +41,8 @@ export function ChatInput({
   const canSend = !disabled && value.trim().length > 0;
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 pt-2 pb-4">
-      <div className="relative flex items-end gap-2 rounded-3xl border border-white/10 bg-[#2f2f2f] px-4 py-2.5 shadow-lg focus-within:border-white/20">
+    <div className="mx-auto w-full max-w-3xl px-2.5 pt-1.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pt-2 sm:pb-4">
+      <div className="relative flex items-end gap-2 rounded-2xl border border-white/10 bg-[#2f2f2f] px-3 py-2 shadow-lg focus-within:border-white/20 sm:rounded-3xl sm:px-4 sm:py-2.5">
         <textarea
           ref={textareaRef}
           rows={1}
@@ -52,7 +52,7 @@ export function ChatInput({
           onKeyDown={handleKeyDown}
           placeholder={disabled ? t('chat.inputPlaceholderSuspended') : t('chat.inputPlaceholder')}
           aria-label={t('chat.inputAria')}
-          className="max-h-[200px] min-h-[26px] flex-1 resize-none bg-transparent py-1 text-[0.96875rem] leading-6 text-[#ececec] placeholder-[#8e8ea0] outline-none disabled:cursor-not-allowed disabled:opacity-60"
+          className="max-h-[200px] min-h-[26px] flex-1 resize-none bg-transparent py-1 text-base leading-6 text-[#ececec] placeholder-[#8e8ea0] outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:text-[0.96875rem]"
         />
 
         {isStreaming ? (
@@ -83,7 +83,7 @@ export function ChatInput({
           </button>
         )}
       </div>
-      <p className="mt-2 text-center text-[11px] text-[#8e8ea0]">
+      <p className="mt-2 hidden text-center text-[11px] text-[#8e8ea0] sm:block">
         {t('chat.disclaimerPrefix')}
         <kbd className="rounded bg-white/10 px-1 py-0.5">Enter</kbd>
         {t('chat.disclaimerMiddle')}

@@ -3,6 +3,7 @@ import {
   Activity,
   ArrowLeft,
   Ban,
+  BrushCleaning,
   CheckCircle2,
   Cpu,
   DollarSign,
@@ -290,25 +291,25 @@ export function AdminPage({
   const passwordTargetUser = users.find((u) => u.id === passwordTargetUserId) ?? null;
 
   return (
-    <div className="flex h-dvh w-screen flex-col overflow-hidden bg-[#212121] text-[#ececec]">
+    <div className="flex h-dvh w-full flex-col overflow-hidden bg-[#212121] text-[#ececec]">
       {/* Top Admin Header */}
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[#171717] px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-3">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2.5 border-b border-white/10 bg-[#171717] px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onBackToChat}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#242424] px-3 py-1.5 text-sm font-medium text-[#ececec] transition-colors hover:bg-[#2f2f2f]"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-[#242424] px-2.5 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:bg-[#2f2f2f] sm:px-3 sm:text-sm"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>{t('admin.backToChat')}</span>
           </button>
 
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#10a37f]/20 text-[#10a37f]">
-              <Shield className="h-5 w-5" />
+          <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#10a37f]/20 text-[#10a37f] sm:h-9 sm:w-9">
+              <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div>
-              <h1 className="text-base font-semibold text-white sm:text-lg">{t('admin.title')}</h1>
+            <div className="min-w-0">
+              <h1 className="truncate text-sm font-semibold text-white sm:text-lg">{t('admin.title')}</h1>
               <p className="hidden text-xs text-[#8e8ea0] sm:block">
                 {t('admin.subtitle')}
               </p>
@@ -316,15 +317,15 @@ export function AdminPage({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
           <LanguageSwitcher />
           {activeTab === 'users' && (
             <button
               type="button"
               onClick={() => setAddModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2 text-sm font-medium text-[#212121] transition-colors hover:bg-[#e5e5e5]"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-medium text-[#212121] transition-colors hover:bg-[#e5e5e5] sm:gap-2 sm:px-3.5 sm:py-2 sm:text-sm"
             >
-              <UserPlus className="h-4 w-4" />
+              <UserPlus className="h-4 w-4 shrink-0" />
               <span>{t('admin.addUser')}</span>
             </button>
           )}
@@ -332,15 +333,15 @@ export function AdminPage({
       </header>
 
       {/* Admin Navigation Tabs */}
-      <div className="shrink-0 border-b border-white/10 bg-[#171717] px-4 sm:px-6">
-        <div role="tablist" aria-label={t('admin.sectionsAria')} className="mx-auto flex max-w-6xl gap-1">
+      <div className="shrink-0 overflow-x-auto border-b border-white/10 bg-[#171717] px-3 sm:px-6">
+        <div role="tablist" aria-label={t('admin.sectionsAria')} className="mx-auto flex max-w-6xl gap-1 whitespace-nowrap">
           <button
             type="button"
             role="tab"
             aria-selected={activeTab === 'users'}
             onClick={() => setActiveTab('users')}
             className={[
-              'inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors',
+              'inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-xs font-medium transition-colors sm:px-4 sm:py-3 sm:text-sm',
               activeTab === 'users'
                 ? 'border-[#10a37f] text-white'
                 : 'border-transparent text-[#8e8ea0] hover:text-[#ececec]',
@@ -356,7 +357,7 @@ export function AdminPage({
             aria-selected={activeTab === 'tokens'}
             onClick={() => setActiveTab('tokens')}
             className={[
-              'inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors',
+              'inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-xs font-medium transition-colors sm:px-4 sm:py-3 sm:text-sm',
               activeTab === 'tokens'
                 ? 'border-[#10a37f] text-white'
                 : 'border-transparent text-[#8e8ea0] hover:text-[#ececec]',
@@ -369,8 +370,8 @@ export function AdminPage({
       </div>
 
       {/* Main Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
-        <div className="mx-auto max-w-6xl space-y-6">
+      <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6">
+        <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
           {activeTab === 'tokens' ? (
             <ProviderTokensTab
               tokens={providerTokens}
@@ -381,14 +382,14 @@ export function AdminPage({
           ) : (
             <>
           {/* KPI Summary Cards */}
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5" aria-label={t('admin.metricsAria')}>
-            <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-4">
+          <section className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-5" aria-label={t('admin.metricsAria')}>
+            <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-3.5 sm:p-4">
               <div className="flex items-center justify-between text-xs text-[#8e8ea0]">
                 <span>{t('admin.kpi.totalUsers')}</span>
-                <Users className="h-4 w-4 text-[#10a37f]" />
+                <Users className="h-4 w-4 shrink-0 text-[#10a37f]" />
               </div>
-              <div className="mt-2 text-2xl font-semibold text-white">{stats.totalUsers}</div>
-              <div className="mt-1 text-xs text-[#b4b4b4]">
+              <div className="mt-1.5 text-xl font-semibold text-white sm:mt-2 sm:text-2xl">{stats.totalUsers}</div>
+              <div className="mt-1 text-[11px] text-[#b4b4b4] sm:text-xs">
                 {t('admin.kpi.activeSuspended', {
                   active: stats.activeCount,
                   suspended: stats.suspendedCount,
@@ -396,15 +397,15 @@ export function AdminPage({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-4">
+            <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-3.5 sm:p-4">
               <div className="flex items-center justify-between text-xs text-[#8e8ea0]">
                 <span>{t('admin.kpi.tokensConsumed')}</span>
-                <Cpu className="h-4 w-4 text-sky-400" />
+                <Cpu className="h-4 w-4 shrink-0 text-sky-400" />
               </div>
-              <div className="mt-2 text-2xl font-semibold text-white">
+              <div className="mt-1.5 text-xl font-semibold text-white sm:mt-2 sm:text-2xl">
                 {formatTokenCount(stats.totalTokens)}
               </div>
-              <div className="mt-1 text-xs text-[#b4b4b4]">
+              <div className="mt-1 text-[11px] text-[#b4b4b4] sm:text-xs">
                 {t('admin.kpi.promptCompletion', {
                   prompt: formatTokenCount(stats.totalPromptTokens),
                   completion: formatTokenCount(stats.totalCompletionTokens),
@@ -413,17 +414,17 @@ export function AdminPage({
             </div>
 
             <div
-              className="rounded-2xl border border-emerald-500/20 bg-[#1b1b1b] p-4"
+              className="rounded-2xl border border-emerald-500/20 bg-[#1b1b1b] p-3.5 sm:p-4"
               data-testid="admin-estimated-spend-card"
             >
               <div className="flex items-center justify-between text-xs text-[#8e8ea0]">
                 <span>{t('admin.kpi.estFunds')}</span>
-                <DollarSign className="h-4 w-4 text-emerald-400" />
+                <DollarSign className="h-4 w-4 shrink-0 text-emerald-400" />
               </div>
-              <div className="mt-2 text-2xl font-semibold text-emerald-400">
+              <div className="mt-1.5 text-xl font-semibold text-emerald-400 sm:mt-2 sm:text-2xl">
                 {formatUsd(stats.totalEstimatedUsd)}
               </div>
-              <div className="mt-1 text-xs text-[#b4b4b4]">
+              <div className="mt-1 text-[11px] text-[#b4b4b4] sm:text-xs">
                 {t('admin.kpi.estFundsBreakdown', {
                   openai: formatUsd(stats.totalOpenAiUsd),
                   claude: formatUsd(stats.totalAnthropicUsd),
@@ -431,13 +432,13 @@ export function AdminPage({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-4">
+            <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-3.5 sm:p-4">
               <div className="flex items-center justify-between text-xs text-[#8e8ea0]">
                 <span>{t('admin.kpi.conversations')}</span>
-                <MessageSquare className="h-4 w-4 text-violet-400" />
+                <MessageSquare className="h-4 w-4 shrink-0 text-violet-400" />
               </div>
-              <div className="mt-2 text-2xl font-semibold text-white">{stats.totalChats}</div>
-              <div className="mt-1 text-xs text-[#b4b4b4]">
+              <div className="mt-1.5 text-xl font-semibold text-white sm:mt-2 sm:text-2xl">{stats.totalChats}</div>
+              <div className="mt-1 text-[11px] text-[#b4b4b4] sm:text-xs">
                 {stats.deletedChats > 0
                   ? t('admin.kpi.messagesWithDeleted', {
                       count: stats.totalMessages,
@@ -447,12 +448,12 @@ export function AdminPage({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-4">
+            <div className="col-span-2 rounded-2xl border border-white/10 bg-[#1b1b1b] p-3.5 sm:col-span-1 sm:p-4">
               <div className="flex items-center justify-between text-xs text-[#8e8ea0]">
                 <span>{t('admin.kpi.quotaUtilization')}</span>
-                <Activity className="h-4 w-4 text-amber-400" />
+                <Activity className="h-4 w-4 shrink-0 text-amber-400" />
               </div>
-              <div className="mt-2 text-2xl font-semibold text-white">{stats.quotaPercent}%</div>
+              <div className="mt-1.5 text-xl font-semibold text-white sm:mt-2 sm:text-2xl">{stats.quotaPercent}%</div>
               <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                 <div
                   className="h-full rounded-full bg-[#10a37f] transition-all"
@@ -468,7 +469,7 @@ export function AdminPage({
             aria-label={t('admin.spend.title')}
           >
             <div className="rounded-2xl border border-white/10 bg-[#1b1b1b] p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold text-white">
                   {t('admin.spend.title')}
                 </h2>
@@ -480,7 +481,7 @@ export function AdminPage({
                 {t('admin.spend.description')}
               </p>
 
-              <div className="mt-3 grid grid-cols-2 gap-2.5 text-xs">
+              <div className="mt-3 grid grid-cols-1 gap-2.5 text-xs sm:grid-cols-2">
                 <div className="rounded-xl border border-white/10 bg-[#171717] px-3 py-2">
                   <div className="text-[#8e8ea0]">{t('admin.spend.openaiTitle')}</div>
                   <div className="mt-0.5 text-base font-semibold text-white">
@@ -583,7 +584,7 @@ export function AdminPage({
 
           {/* Filter, Search & Backup Toolbar */}
           <section className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <div className="relative max-w-sm flex-1">
+            <div className="relative w-full sm:max-w-sm sm:flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#8e8ea0]" />
               <input
                 type="text"
@@ -614,7 +615,7 @@ export function AdminPage({
                     type="button"
                     onClick={() => setStatusFilter(tab)}
                     className={[
-                      'rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors',
+                      'rounded-lg px-2.5 py-1.5 text-xs font-medium capitalize transition-colors sm:px-3',
                       statusFilter === tab
                         ? 'bg-[#2f2f2f] text-white'
                         : 'text-[#8e8ea0] hover:text-white',
@@ -636,7 +637,7 @@ export function AdminPage({
               <button
                 type="button"
                 onClick={() => setPasswordNotice(null)}
-                className="ml-3 text-[#8e8ea0] hover:text-white"
+                className="ml-3 shrink-0 text-[#8e8ea0] hover:text-white"
                 aria-label={t('admin.dismissPasswordNoticeAria')}
               >
                 {t('common.dismiss')}
@@ -653,7 +654,7 @@ export function AdminPage({
               <button
                 type="button"
                 onClick={() => setBackupNotice(null)}
-                className="ml-3 text-[#8e8ea0] hover:text-white"
+                className="ml-3 shrink-0 text-[#8e8ea0] hover:text-white"
                 aria-label={t('admin.dismissBackupNoticeAria')}
               >
                 {t('common.dismiss')}
@@ -661,11 +662,11 @@ export function AdminPage({
             </div>
           )}
 
-          {/* Users Table */}
+          {/* Users Table (responsive card stack on mobile, full table on md+) */}
           <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#1b1b1b]">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-sm">
-                <thead>
+            <div className="md:overflow-x-auto">
+              <table className="block w-full border-collapse text-left text-sm md:table">
+                <thead className="hidden md:table-header-group">
                   <tr className="border-b border-white/10 bg-[#171717] text-xs font-semibold tracking-wider text-[#8e8ea0] uppercase">
                     <th className="px-4 py-3.5">{t('admin.table.user')}</th>
                     <th className="px-4 py-3.5">{t('admin.table.status')}</th>
@@ -675,10 +676,10 @@ export function AdminPage({
                     <th className="px-4 py-3.5 text-right">{t('admin.table.actions')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/10">
+                <tbody className="block divide-y divide-white/10 md:table-row-group">
                   {filteredUsers.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-10 text-center text-sm text-[#8e8ea0]">
+                    <tr className="block md:table-row">
+                      <td colSpan={6} className="block px-4 py-10 text-center text-sm text-[#8e8ea0] md:table-cell">
                         {t('admin.table.noMatch')}
                       </td>
                     </tr>
@@ -698,10 +699,10 @@ export function AdminPage({
                       return (
                         <tr
                           key={user.id}
-                          className="transition-colors hover:bg-white/[0.03]"
+                          className="flex flex-col gap-3 p-4 transition-colors hover:bg-white/[0.03] md:table-row md:p-0"
                           data-testid={`admin-user-row-${user.id}`}
                         >
-                          <td className="px-4 py-3.5">
+                          <td className="block p-0 md:table-cell md:px-4 md:py-3.5">
                             <div className="flex items-center gap-3">
                               <img
                                 src={user.avatarUrl}
@@ -709,7 +710,7 @@ export function AdminPage({
                                 className="h-9 w-9 shrink-0 rounded-full border border-white/15 object-cover"
                               />
                               <div className="min-w-0">
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                                   <span className="truncate font-medium text-white">
                                     {user.name}
                                   </span>
@@ -727,7 +728,10 @@ export function AdminPage({
                             </div>
                           </td>
 
-                          <td className="px-4 py-3.5">
+                          <td className="flex items-center justify-between gap-2 p-0 md:table-cell md:px-4 md:py-3.5">
+                            <span className="text-xs font-medium text-[#8e8ea0] md:hidden">
+                              {t('admin.table.status')}
+                            </span>
                             <span
                               className={[
                                 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
@@ -748,8 +752,8 @@ export function AdminPage({
                             </span>
                           </td>
 
-                          <td className="px-4 py-3.5">
-                            <div className="w-44">
+                          <td className="block p-0 md:table-cell md:px-4 md:py-3.5">
+                            <div className="w-full md:w-44">
                               <div className="flex items-baseline justify-between text-xs">
                                 <span className="font-medium text-white">
                                   {user.tokenUsage.totalTokens.toLocaleString(dateLocale)}
@@ -780,22 +784,27 @@ export function AdminPage({
                             </div>
                           </td>
 
-                          <td className="px-4 py-3.5 whitespace-nowrap">
-                            <div className="text-xs font-semibold text-emerald-400">
-                              {formatUsd(userCost.totalUsd)}
-                            </div>
-                            <div className="mt-0.5 text-[11px] text-[#8e8ea0]">
-                              {userCost.openAiUsd > 0 && userCost.anthropicUsd > 0
-                                ? `OAI ${formatUsd(userCost.openAiUsd)} · CLD ${formatUsd(userCost.anthropicUsd)}`
-                                : userCost.anthropicUsd > 0
-                                  ? t('admin.user.claudeEst')
-                                  : userCost.openAiUsd > 0
-                                    ? t('admin.user.openaiEst')
-                                    : t('admin.user.noUsage')}
+                          <td className="flex items-center justify-between gap-2 p-0 whitespace-nowrap md:table-cell md:px-4 md:py-3.5">
+                            <span className="text-xs font-medium text-[#8e8ea0] md:hidden">
+                              {t('admin.table.estSpend')}
+                            </span>
+                            <div className="text-right md:text-left">
+                              <div className="text-xs font-semibold text-emerald-400">
+                                {formatUsd(userCost.totalUsd)}
+                              </div>
+                              <div className="mt-0.5 text-[11px] text-[#8e8ea0]">
+                                {userCost.openAiUsd > 0 && userCost.anthropicUsd > 0
+                                  ? `OAI ${formatUsd(userCost.openAiUsd)} · CLD ${formatUsd(userCost.anthropicUsd)}`
+                                  : userCost.anthropicUsd > 0
+                                    ? t('admin.user.claudeEst')
+                                    : userCost.openAiUsd > 0
+                                      ? t('admin.user.openaiEst')
+                                      : t('admin.user.noUsage')}
+                              </div>
                             </div>
                           </td>
 
-                          <td className="px-4 py-3.5">
+                          <td className="block p-0 whitespace-nowrap md:table-cell md:px-4 md:py-3.5">
                             <div className="flex flex-wrap items-center gap-1.5">
                               <button
                                 type="button"
@@ -803,7 +812,7 @@ export function AdminPage({
                                 className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#252525] px-2.5 py-1.5 text-xs font-medium text-[#ececec] transition-colors hover:border-white/20 hover:bg-[#2f2f2f]"
                                 aria-label={t('admin.user.viewChatsAria', { name: user.name })}
                               >
-                                <MessageSquare className="h-3.5 w-3.5 text-[#10a37f]" />
+                                <MessageSquare className="h-3.5 w-3.5 shrink-0 text-[#10a37f]" />
                                 <span>
                                   {user.chats.length}{' '}
                                   {user.chats.length === 1
@@ -818,12 +827,17 @@ export function AdminPage({
                                   title={t('admin.user.deletedBadgeTitle', {
                                     count: userDeletedChatsCount,
                                   })}
-                                  className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-[11px] font-medium text-rose-300"
+                                  aria-label={t('admin.user.deletedBadgeTitle', {
+                                    count: userDeletedChatsCount,
+                                  })}
+                                  className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-[11px] font-semibold text-rose-300"
                                 >
-                                  <Trash2 className="h-3 w-3" />
-                                  <span>
-                                    {t('admin.user.deletedBadge', { count: userDeletedChatsCount })}
-                                  </span>
+                                  <BrushCleaning
+                                    className="h-3.5 w-3.5 shrink-0"
+                                    data-testid={`user-deleted-chats-broom-icon-${user.id}`}
+                                    aria-hidden="true"
+                                  />
+                                  <span>{userDeletedChatsCount}</span>
                                 </span>
                               )}
 
@@ -842,9 +856,9 @@ export function AdminPage({
                             </div>
                           </td>
 
-                          <td className="px-4 py-3.5 text-right">
+                          <td className="block p-0 text-left whitespace-nowrap md:table-cell md:px-4 md:py-3.5 md:text-right">
                             {isConfirmingDelete ? (
-                              <div className="inline-flex items-center gap-1.5">
+                              <div className="flex flex-wrap items-center gap-1.5 md:inline-flex">
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -865,7 +879,7 @@ export function AdminPage({
                                 </button>
                               </div>
                             ) : (
-                              <div className="inline-flex items-center gap-1.5">
+                              <div className="flex flex-wrap items-center gap-1.5 md:inline-flex">
                                 <button
                                   type="button"
                                   onClick={() => setPasswordTargetUserId(user.id)}

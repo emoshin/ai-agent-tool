@@ -1,0 +1,13 @@
+services:
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-agent-tool-ui
+    restart: unless-stopped
+    environment:
+      API_UPSTREAM: ${API_UPSTREAM:-http://host.docker.internal:8080}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${UI_PORT:-3000}:80"

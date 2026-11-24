@@ -48,7 +48,7 @@ export const INITIAL_MANAGED_USERS: ManagedUser[] = [
       {
         id: 'elena-chat-1',
         title: 'Refactor Spring Boot WebFlux SSE controller',
-        model: 'claude-sonnet-4',
+        model: 'claude-3-5-haiku',
         createdAt: now - 4 * HOUR,
         updatedAt: now - 45 * 60 * 1000,
         messages: [
@@ -72,7 +72,7 @@ export const INITIAL_MANAGED_USERS: ManagedUser[] = [
       {
         id: 'elena-chat-2',
         title: 'PostgreSQL pgvector HNSW index tuning',
-        model: 'gpt-4o',
+        model: 'gpt-6.2-sol',
         createdAt: now - 2 * DAY,
         updatedAt: now - 2 * DAY,
         messages: [
@@ -114,7 +114,7 @@ export const INITIAL_MANAGED_USERS: ManagedUser[] = [
       {
         id: 'marcus-chat-1',
         title: 'Batch document summarization pipeline',
-        model: 'claude-opus-4',
+        model: 'claude-opus-5-5',
         createdAt: now - 3 * DAY,
         updatedAt: now - 3 * DAY,
         messages: [
@@ -156,7 +156,7 @@ export const INITIAL_MANAGED_USERS: ManagedUser[] = [
       {
         id: 'priya-chat-1',
         title: 'Release notes draft for v1.2',
-        model: 'gpt-4o',
+        model: 'gpt-5-nano',
         createdAt: now - DAY,
         updatedAt: now - DAY,
         messages: [

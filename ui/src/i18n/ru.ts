@@ -15,10 +15,10 @@ export const ru: Record<TranslationKey, string> = {
   'common.russian': 'Русский',
 
   // Models & Starter Prompts
-  'model.gpt-4o.desc': 'Флагманская модель OpenAI для быстрых и универсальных задач',
-  'model.o3-mini.desc': 'Модель OpenAI для кода, математики и архитектуры',
-  'model.claude-sonnet-4.desc': 'Сбалансированная модель Anthropic для кода и анализа',
-  'model.claude-opus-4.desc': 'Продвинутая модель Anthropic для сложной инженерии',
+  'model.gpt-6.2-sol.desc': 'Флагманская модель OpenAI для быстрых и универсальных задач',
+  'model.gpt-5-nano.desc': 'Самая экономичная модель OpenAI для быстрых и лёгких задач',
+  'model.claude-opus-5-5.desc': 'Продвинутая модель Anthropic для сложной инженерии',
+  'model.claude-3-5-haiku.desc': 'Самая экономичная модель Anthropic для быстрых и кратких ответов',
   'starter.1.title': 'Архитектура Java + React',
   'starter.1.prompt':
     'Как лучше организовать Spring Boot API для потоковой передачи SSE-ответов в этот React-чат?',
@@ -167,9 +167,9 @@ export const ru: Record<TranslationKey, string> = {
   'admin.spend.description':
     'Рассчитано по сохранённым входным и выходным токенам моделей согласно публичным тарифам API (USD за 1M токенов).',
   'admin.spend.openaiTitle': 'OpenAI (ChatGPT)',
-  'admin.spend.openaiRates': '4o: $2.50/$10 · o3-mini: $1.10/$4.40',
+  'admin.spend.openaiRates': '6.2 Sol: $2.50/$10 · 5 Nano: $0.05/$0.40',
   'admin.spend.anthropicTitle': 'Anthropic (Claude)',
-  'admin.spend.anthropicRates': 'Sonnet 4: $3/$15 · Opus 4: $15/$75',
+  'admin.spend.anthropicRates': 'Opus 5.5: $15/$75 · 3.5 Haiku: $0.80/$4',
   'admin.billing.title': 'Расходы и баланс OpenAI Platform',
   'admin.billing.link': 'Биллинг OpenAI',
   'admin.billing.noteBefore': 'OpenAI ',
@@ -309,8 +309,8 @@ export const ru: Record<TranslationKey, string> = {
   'tokens.saveErr': 'Не удалось сохранить API-токен.',
   'tokens.removedMsg': 'Токен {label} удалён.',
   'tokens.removeErr': 'Не удалось удалить API-токен.',
-  'tokens.openaiDesc': 'Используется моделями ChatGPT 4o и o3-mini',
-  'tokens.anthropicDesc': 'Используется моделями Claude Sonnet 4 и Opus 4',
+  'tokens.openaiDesc': 'Используется моделями ChatGPT 6.2 Sol и GPT-5 Nano',
+  'tokens.anthropicDesc': 'Используется моделями Claude Opus 5.5 и Claude 3.5 Haiku',
   'tokens.configured': 'Настроен ({masked})',
   'tokens.notConfigured': 'Не настроен',
   'tokens.openaiLabel': 'API-токен OpenAI / ChatGPT',

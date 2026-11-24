@@ -2,7 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../App';
+import { I18nProvider } from '../i18n/I18nContext';
 import { SimulatedBotAdapter } from '../services/botClient';
+import { AuthScreen } from './AuthScreen';
 
 describe('Authentication & Login Screen', () => {
   afterEach(() => {
@@ -174,5 +176,21 @@ describe('Authentication & Login Screen', () => {
     });
 
     expect(screen.queryByRole('button', { name: 'Admin Console' })).not.toBeInTheDocument();
+  });
+
+  it('hides default admin credentials helper when showDefaultAdminHint is disabled', () => {
+    render(
+      <I18nProvider>
+        <AuthScreen
+          showDefaultAdminHint={false}
+          onAuthenticated={vi.fn()}
+          onUseSimulatedMode={vi.fn()}
+        />
+      </I18nProvider>
+    );
+
+    expect(screen.queryByText('Default Admin Credentials')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Fill Admin Login' })).not.toBeInTheDocument();
+    expect(screen.queryByText('admin123')).not.toBeInTheDocument();
   });
 });

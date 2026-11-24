@@ -12,43 +12,29 @@ export interface ModelPricingRate {
 
 export const MODEL_PRICING_LIST: ModelPricingRate[] = [
   {
-    modelPattern: 'gpt-4o',
-    label: 'ChatGPT 4o',
+    modelPattern: 'gpt-6.2-sol',
+    label: 'ChatGPT 6.2 Sol',
     provider: 'openai',
     inputUsdPerMillion: 2.5,
     outputUsdPerMillion: 10.0,
   },
   {
-    modelPattern: 'gpt-4o-mini',
-    label: 'GPT-4o mini',
+    modelPattern: 'gpt-5-nano',
+    label: 'GPT-5 Nano',
     provider: 'openai',
-    inputUsdPerMillion: 0.15,
-    outputUsdPerMillion: 0.6,
+    inputUsdPerMillion: 0.05,
+    outputUsdPerMillion: 0.4,
   },
   {
-    modelPattern: 'o3-mini',
-    label: 'ChatGPT o3-mini',
-    provider: 'openai',
-    inputUsdPerMillion: 1.1,
-    outputUsdPerMillion: 4.4,
-  },
-  {
-    modelPattern: 'claude-sonnet-4',
-    label: 'Claude Sonnet 4',
-    provider: 'anthropic',
-    inputUsdPerMillion: 3.0,
-    outputUsdPerMillion: 15.0,
-  },
-  {
-    modelPattern: 'claude-opus-4',
-    label: 'Claude Opus 4',
+    modelPattern: 'claude-opus-5-5',
+    label: 'Claude Opus 5.5',
     provider: 'anthropic',
     inputUsdPerMillion: 15.0,
     outputUsdPerMillion: 75.0,
   },
   {
-    modelPattern: 'claude-haiku',
-    label: 'Claude Haiku',
+    modelPattern: 'claude-3-5-haiku',
+    label: 'Claude 3.5 Haiku',
     provider: 'anthropic',
     inputUsdPerMillion: 0.8,
     outputUsdPerMillion: 4.0,
@@ -119,10 +105,13 @@ export function getModelPricingRate(modelId: string): {
 } {
   const lower = (modelId || '').trim().toLowerCase();
 
+  if (lower.includes('gpt-5-nano')) {
+    return { inputUsdPerMillion: 0.05, outputUsdPerMillion: 0.4 };
+  }
   if (lower.includes('gpt-4o-mini')) {
     return { inputUsdPerMillion: 0.15, outputUsdPerMillion: 0.6 };
   }
-  if (lower.includes('gpt-4o') || lower === 'agent-4o') {
+  if (lower.includes('gpt-6.2-sol') || lower.includes('gpt-4o') || lower === 'agent-4o') {
     return { inputUsdPerMillion: 2.5, outputUsdPerMillion: 10.0 };
   }
   if (lower.includes('o3-mini') || lower === 'agent-o3-mini') {
@@ -227,7 +216,7 @@ export function estimateUserCostBreakdown(user: ManagedUser): {
   const fallbackCost =
     typeof user.tokenUsage.estimatedCostUsd === 'number'
       ? user.tokenUsage.estimatedCostUsd
-      : estimateModelCostUsd('gpt-4o', totalPrompt, totalCompletion);
+      : estimateModelCostUsd('gpt-6.2-sol', totalPrompt, totalCompletion);
 
   return {
     totalUsd: fallbackCost,

@@ -60,22 +60,22 @@ export function SetUserPasswordModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 backdrop-blur-xs sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="set-user-password-modal-title"
     >
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#212121] p-6 text-[#ececec] shadow-2xl">
-        <div className="mb-5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#10a37f]/20 text-[#10a37f]">
+      <div className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-white/10 bg-[#212121] p-4 text-[#ececec] shadow-2xl sm:p-6">
+        <div className="mb-4 flex items-center justify-between gap-2 sm:mb-5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#10a37f]/20 text-[#10a37f]">
               <KeyRound className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 id="set-user-password-modal-title" className="text-base font-semibold text-white">
                 {t('setPassword.title')}
               </h2>
-              <p className="text-xs text-[#8e8ea0]">
+              <p className="truncate text-xs text-[#8e8ea0]">
                 {user.name} ({user.email})
               </p>
             </div>
@@ -83,7 +83,7 @@ export function SetUserPasswordModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-[#8e8ea0] hover:bg-white/10 hover:text-white"
+            className="shrink-0 rounded-lg p-1.5 text-[#8e8ea0] hover:bg-white/10 hover:text-white"
             aria-label={t('setPassword.closeAria')}
           >
             <X className="h-5 w-5" />

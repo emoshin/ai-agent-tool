@@ -1,0 +1,10 @@
+.git
+.idea
+.mvn
+target
+ui
+docs
+skills
+*.iml
+package-lock.json
+README.md

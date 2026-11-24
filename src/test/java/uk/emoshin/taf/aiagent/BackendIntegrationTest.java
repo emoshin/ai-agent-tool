@@ -231,7 +231,7 @@ class BackendIntegrationTest {
                 "/api/chat",
                 HttpMethod.POST,
                 new HttpEntity<>(
-                        new ChatRequest(null, "gpt-4o", false, List.of(new ChatMessageInput("user", "Hello"))),
+                        new ChatRequest(null, "gpt-6.2-sol", false, List.of(new ChatMessageInput("user", "Hello"))),
                         bearerHeaders(aliceJwt)
                 ),
                 String.class
@@ -281,14 +281,14 @@ class BackendIntegrationTest {
         assertThat(storedOpenAi.getEncryptedApiKey()).isNotEqualTo(rawOpenAiKey);
         assertThat(storedOpenAi.getEncryptedApiKey()).doesNotContain(rawOpenAiKey);
 
-        // 5. Regular user chats with ChatGPT (gpt-4o, SSE streaming) -> backend injects admin's OpenAI token
+        // 5. Regular user chats with ChatGPT (gpt-6.2-sol, SSE streaming) -> backend injects admin's OpenAI token
         ResponseEntity<String> sseResponse = restTemplate.exchange(
                 "/api/chat",
                 HttpMethod.POST,
                 new HttpEntity<>(
                         new ChatRequest(
                                 "chat-alice-1",
-                                "gpt-4o",
+                                "gpt-6.2-sol",
                                 true,
                                 List.of(new ChatMessageInput("user", "Hello ChatGPT"))
                         ),
@@ -310,7 +310,7 @@ class BackendIntegrationTest {
                 new HttpEntity<>(
                         new ChatRequest(
                                 "chat-alice-1",
-                                "claude-sonnet-4",
+                                "claude-opus-5-5",
                                 false,
                                 List.of(new ChatMessageInput("user", "Switch model please"))
                         ),
@@ -320,14 +320,14 @@ class BackendIntegrationTest {
         );
         assertThat(modelSwitchAttempt.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
 
-        // 7. Regular user starts a new chat with Claude (claude-sonnet-4) -> backend injects admin's Anthropic key
+        // 7. Regular user starts a new chat with Claude (claude-opus-5-5) -> backend injects admin's Anthropic key
         ResponseEntity<String> claudeResponse = restTemplate.exchange(
                 "/api/chat",
                 HttpMethod.POST,
                 new HttpEntity<>(
                         new ChatRequest(
                                 "chat-alice-2",
-                                "claude-sonnet-4",
+                                "claude-opus-5-5",
                                 false,
                                 List.of(
                                         new ChatMessageInput("system", "Stay concise"),
@@ -342,7 +342,7 @@ class BackendIntegrationTest {
         assertThat(claudeResponse.getBody()).contains("Claude reply");
         assertThat(claudeResponse.getBody()).doesNotContain(rawAnthropicKey);
         assertThat(LAST_ANTHROPIC_KEY.get()).isEqualTo(rawAnthropicKey);
-        assertThat(LAST_ANTHROPIC_MODEL.get()).isEqualTo("claude-sonnet-4-20250514");
+        assertThat(LAST_ANTHROPIC_MODEL.get()).isEqualTo("claude-opus-5-5");
 
         // 8. Verify per-model token usage statistics for Alice & Global Admin stats
         ResponseEntity<UserProfileResponse> aliceMe = restTemplate.exchange(
@@ -353,17 +353,17 @@ class BackendIntegrationTest {
         );
         assertThat(aliceMe.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(aliceMe.getBody().tokenUsage().totalTokens()).isEqualTo(14L + 25L);
-        assertThat(aliceMe.getBody().tokenUsage().estimatedCostUsd()).isCloseTo(0.000224, within(1e-7));
+        assertThat(aliceMe.getBody().tokenUsage().estimatedCostUsd()).isCloseTo(0.000860, within(1e-7));
 
         Map<String, ModelUsageDto> byModel = aliceMe.getBody().modelBreakdown().stream()
                 .collect(java.util.stream.Collectors.toMap(ModelUsageDto::model, m -> m));
-        assertThat(byModel).containsKeys("gpt-4o", "claude-sonnet-4");
-        assertThat(byModel.get("gpt-4o").provider()).isEqualTo(AgentProvider.OPENAI);
-        assertThat(byModel.get("gpt-4o").totalTokens()).isEqualTo(14L);
-        assertThat(byModel.get("gpt-4o").estimatedCostUsd()).isCloseTo(0.000065, within(1e-7));
-        assertThat(byModel.get("claude-sonnet-4").provider()).isEqualTo(AgentProvider.ANTHROPIC);
-        assertThat(byModel.get("claude-sonnet-4").totalTokens()).isEqualTo(25L);
-        assertThat(byModel.get("claude-sonnet-4").estimatedCostUsd()).isCloseTo(0.000159, within(1e-7));
+        assertThat(byModel).containsKeys("gpt-6.2-sol", "claude-opus-5-5");
+        assertThat(byModel.get("gpt-6.2-sol").provider()).isEqualTo(AgentProvider.OPENAI);
+        assertThat(byModel.get("gpt-6.2-sol").totalTokens()).isEqualTo(14L);
+        assertThat(byModel.get("gpt-6.2-sol").estimatedCostUsd()).isCloseTo(0.000065, within(1e-7));
+        assertThat(byModel.get("claude-opus-5-5").provider()).isEqualTo(AgentProvider.ANTHROPIC);
+        assertThat(byModel.get("claude-opus-5-5").totalTokens()).isEqualTo(25L);
+        assertThat(byModel.get("claude-opus-5-5").estimatedCostUsd()).isCloseTo(0.000795, within(1e-7));
 
         ResponseEntity<GlobalTokenStatsResponse> globalStats = restTemplate.exchange(
                 "/api/admin/stats/tokens",
@@ -374,8 +374,8 @@ class BackendIntegrationTest {
         assertThat(globalStats.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(globalStats.getBody().totalTokens()).isEqualTo(39L);
         assertThat(globalStats.getBody().openAiEstimatedCostUsd()).isCloseTo(0.000065, within(1e-7));
-        assertThat(globalStats.getBody().anthropicEstimatedCostUsd()).isCloseTo(0.000159, within(1e-7));
-        assertThat(globalStats.getBody().estimatedCostUsd()).isCloseTo(0.000224, within(1e-7));
+        assertThat(globalStats.getBody().anthropicEstimatedCostUsd()).isCloseTo(0.000795, within(1e-7));
+        assertThat(globalStats.getBody().estimatedCostUsd()).isCloseTo(0.000860, within(1e-7));
 
         // 8b. OpenAI organization costs endpoint: forbidden to regular user, graceful with project key, works with admin key
         ResponseEntity<String> forbiddenBilling = restTemplate.exchange(
@@ -422,7 +422,7 @@ class BackendIntegrationTest {
                 .findFirst()
                 .orElseThrow();
         assertThat(aliceAdminView.chatCount()).isEqualTo(2L);
-        assertThat(aliceAdminView.tokenUsage().estimatedCostUsd()).isCloseTo(0.000224, within(1e-7));
+        assertThat(aliceAdminView.tokenUsage().estimatedCostUsd()).isCloseTo(0.000860, within(1e-7));
 
         ResponseEntity<ChatSessionResponse[]> aliceChats = restTemplate.exchange(
                 "/api/admin/users/" + aliceAdminView.id() + "/chats",
@@ -435,11 +435,11 @@ class BackendIntegrationTest {
 
         // 8c. Alice renames her Claude chat and deletes her OpenAI chat -> soft deleted in DB
         ChatSessionResponse claudeChat = List.of(aliceChats.getBody()).stream()
-                .filter(c -> c.model().equals("claude-sonnet-4"))
+                .filter(c -> c.model().equals("claude-opus-5-5"))
                 .findFirst()
                 .orElseThrow();
         ChatSessionResponse openAiChat = List.of(aliceChats.getBody()).stream()
-                .filter(c -> c.model().equals("gpt-4o"))
+                .filter(c -> c.model().equals("gpt-6.2-sol"))
                 .findFirst()
                 .orElseThrow();
 
@@ -482,7 +482,7 @@ class BackendIntegrationTest {
                 "/api/chat",
                 HttpMethod.POST,
                 new HttpEntity<>(
-                        new ChatRequest("chat-alice-1", "gpt-4o", false, List.of(new ChatMessageInput("user", "Still there?"))),
+                        new ChatRequest("chat-alice-1", "gpt-6.2-sol", false, List.of(new ChatMessageInput("user", "Still there?"))),
                         bearerHeaders(aliceJwt)
                 ),
                 String.class
@@ -603,7 +603,7 @@ class BackendIntegrationTest {
                 "/api/chat",
                 HttpMethod.POST,
                 new HttpEntity<>(
-                        new ChatRequest(null, "gpt-4o", false, List.of(new ChatMessageInput("user", "Am I blocked?"))),
+                        new ChatRequest(null, "gpt-6.2-sol", false, List.of(new ChatMessageInput("user", "Am I blocked?"))),
                         bearerHeaders(aliceJwt)
                 ),
                 String.class

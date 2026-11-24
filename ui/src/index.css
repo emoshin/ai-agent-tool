@@ -42,7 +42,14 @@
 .chat-markdown {
   color: #ececec;
   line-height: 1.7;
-  font-size: 0.96875rem;
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 640px) {
+  .chat-markdown {
+    font-size: 0.96875rem;
+  }
 }
 
 .chat-markdown > *:first-child {
@@ -114,11 +121,8 @@
 .chat-markdown table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1rem 0;
+  margin: 0;
   font-size: 0.875rem;
-  overflow: hidden;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .chat-markdown th,

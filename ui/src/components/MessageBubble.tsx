@@ -38,12 +38,12 @@ export function MessageBubble({
 
   if (message.role === 'user') {
     return (
-      <div className="group flex justify-end gap-3 py-3" data-testid="user-message">
-        <div className="flex max-w-[82%] flex-col items-end gap-1 sm:max-w-[75%]">
-          <div className="rounded-3xl bg-[#2f2f2f] px-4 py-2.5 text-[0.96875rem] leading-relaxed whitespace-pre-wrap text-[#ececec]">
+      <div className="group flex justify-end gap-2.5 py-2.5 sm:gap-3 sm:py-3" data-testid="user-message">
+        <div className="flex max-w-[88%] flex-col items-end gap-1 sm:max-w-[75%]">
+          <div className="rounded-2xl bg-[#2f2f2f] px-3.5 py-2.5 text-[0.9375rem] leading-relaxed break-words whitespace-pre-wrap text-[#ececec] sm:rounded-3xl sm:px-4 sm:text-[0.96875rem]">
             {message.content}
           </div>
-          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
             <button
               type="button"
               onClick={handleCopy}
@@ -66,10 +66,10 @@ export function MessageBubble({
   const provider = getModelProvider(modelId ?? '');
 
   return (
-    <div className="group flex items-start gap-3.5 py-3.5" data-testid="assistant-message">
+    <div className="group flex items-start gap-2.5 py-3 sm:gap-3.5 sm:py-3.5" data-testid="assistant-message">
       <div
         className={[
-          'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border',
+          'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border sm:h-8 sm:w-8',
           message.isError
             ? 'border-red-500/40 bg-red-500/15 text-red-300'
             : provider === 'anthropic'
@@ -79,9 +79,9 @@ export function MessageBubble({
         aria-hidden="true"
       >
         {message.isError ? (
-          <AlertCircle className="h-4 w-4" />
+          <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         ) : (
-          <ModelIcon modelId={modelId} className="h-4 w-4" />
+          <ModelIcon modelId={modelId} className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         )}
       </div>
 
@@ -89,7 +89,7 @@ export function MessageBubble({
         <div
           className={
             message.isError
-              ? 'rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200'
+              ? 'rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2.5 text-sm text-red-200 sm:px-4 sm:py-3'
               : ''
           }
         >
@@ -112,7 +112,7 @@ export function MessageBubble({
         </div>
 
         {!message.isStreaming && message.content && (
-          <div className="mt-1.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          <div className="mt-1.5 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
             <button
               type="button"
               onClick={handleCopy}
